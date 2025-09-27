@@ -138,8 +138,8 @@
         .screen { width: 100%; height: 100%; position: absolute; top: 0; left: 0; display: flex; flex-direction: column; overflow: hidden; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
         .screen.active { opacity: 1; visibility: visible; z-index: 1; }
         .header { position: relative; z-index: 15; flex-shrink: 0; padding: 15px 20px; padding-top: 45px; background-color: rgba(247, 247, 247, 0.8); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; font-size: 18px; font-weight: 600; }
-        .header .header-actions { display: flex; align-items: center; gap: 15px; }
-        .header .back-btn, .header .action-btn { font-size: 24px; cursor: pointer; width: 30px; text-align: center; color: var(--accent-color); display: flex; align-items: center; justify-content: center; }
+        .header .header-actions { display: flex; align-items: center; gap: 10px; }
+        .header .back-btn, .header .action-btn { font-size: 24px; cursor: pointer; width: 28px; text-align: center; color: var(--accent-color); display: flex; align-items: center; justify-content: center; }
         
         .header .action-btn {
             font-size: 16px; /* 专门为"上传"、"+"等文字按钮缩小字号 */
@@ -168,6 +168,19 @@
             font-size: 14px;
         }
         /* ▲▲▲ 破限按钮样式结束 ▲▲▲ */
+        
+        /* ▼▼▼ 长期记忆界面特定优化 ▼▼▼ */
+        #long-term-memory-screen .header-actions {
+            gap: 8px; /* 进一步缩小按钮间距 */
+        }
+        
+        #long-term-memory-screen .action-btn {
+            width: 26px; /* 针对长期记忆界面缩小按钮宽度 */
+            font-size: 15px; /* 稍微缩小字体 */
+            padding: 2px; /* 添加一点内边距 */
+            flex-shrink: 0; /* 防止按钮被挤压 */
+        }
+        /* ▲▲▲ 长期记忆界面优化结束 ▲▲▲ */
         
         .header .action-btn img { height: 26px; }
         .header .save-btn { font-size: 16px; color: var(--accent-color); font-weight: 600; cursor: pointer; }
@@ -10418,8 +10431,8 @@
         </div>
         <div class="form-group">
             <label for="auto-memory-interval">自动总结间隔（消息条数）</label>
-            <input type="number" id="auto-memory-interval" min="10" value="20" style="width: 80px; text-align: center;">
-            <p style="font-size: 12px; color: #8a8a8a; margin-top: 8px;"> 建议值 15-30。值越小，总结越频繁，但API费用也越高。 </p>
+            <input type="number" id="auto-memory-interval" min="10" value="50" style="width: 80px; text-align: center;">
+            <p style="font-size: 12px; color: #8a8a8a; margin-top: 8px;"> 建议值 30-80。值越小，总结越频繁，但API费用也越高。 </p>
         </div>
         <hr style="opacity: 0.3; margin: 20px 0;">
         <div class="form-group">
@@ -23374,7 +23387,7 @@ async function summarizeCallTranscript(chatId, transcriptText) {
 # 核心规则
 1.  **【长度铁律】**: 你的总结【必须】非常简短，总长度【绝对不能超过80个字】。
 2.  **客观事实**: 只记录通话中发生的最关键的事实、确认的约定或角色的核心情感变化。
-3.  **第三人称与命名**: 必须使用第三人称。请严格使用“${userNickname}”（代表用户）和“${chat.originalName}”（代表AI角色）来指代对话双方。
+3.  **第三人称与命名**: 必须使用第三人称。请严格使用“${userNickname}”（代表用户，不要用用户两个字称呼）和“${chat.originalName}”（代表AI角色）来指代对话双方。
 4.  **输出格式**: 你的回复【必须且只能】是一个JSON对象，格式如下：
     \`{"summary": "在这里写下你总结好的摘要。"}\`
 # 待总结的视频通话记录
@@ -23643,7 +23656,7 @@ async function triggerAutoSummary(chatId, force = false) {
 
     const lastSummaryTimestamp = chat.lastMemorySummaryTimestamp || 0;
     const messagesToSummarize = force 
-        ? chat.history.filter(m => !m.isHidden).slice(-(chat.settings.autoMemoryInterval || 20))
+        ? chat.history.filter(m => !m.isHidden).slice(-(chat.settings.autoMemoryInterval || 50))
         : chat.history.filter(m => m.timestamp > lastSummaryTimestamp && !m.isHidden);
         
     if (messagesToSummarize.length < 5) {
@@ -23725,15 +23738,28 @@ ${chat.members.map(m => `- ${m.groupNickname} (本名: ${m.originalName})`).join
 现在，请为【每一个AI角色】生成他们各自的、第一人称的、精简的记忆。`;
 
     } else {
-        // --- 这是为【单聊】设计的、保持不变的“客观总结”指令 ---
+        // --- 这是为【单聊】设计的、保持不变的"客观总结"指令 ---
         systemPrompt = `
 # 你的任务
-你是一个对话摘要专家。你的唯一任务是阅读下面的对话历史，并将其浓缩成【一段】流畅、连贯、客观、并且【极其精简】的摘要。
+请仔细阅读上述聊天记录，并遵循以下要求，生成一段新的故事摘要：
+
+新增大总结应当遵循以下原则：
+- 注明这是第几次大总结
+- **只需总结上次大总结到目前的新增部分剧情**
+- 按时间顺序或逻辑顺序组织信息，并包含具体的前后时间，可以分辨不同日期与时间发生的事情
+
+1.  **核心事件提炼:** 识别并描述这段对话中发生的关键事件、转折点或重要行动。
+2.  **情感与关系变化:** 捕捉并记录双方情绪上的主要变化、关系的进展（如变得更亲密、产生误会、关系紧张等）。
+3.  **关键信息与设定:** 记录任何新出现的、对未来故事重要的信息、设定、约定或秘密。
+4.  **叙事风格:** 必须使用第三人称、过去时进行叙述。文笔风格请参考细腻的女性向文学作品。
+5.  **保持客观:** 只总结聊天记录中明确发生或提到的事，不要进行过度的猜测或主观臆断。
+6.  **忽略不重要的内容:** 省略日常的问候（如"你好"、"在吗"）、无意义的闲聊和重复信息。
+
 # 核心规则
-1.  **【【【长度铁律】】】**: 你的总结【必须】非常简短，总长度【绝对不能超过80个字】。
-2.  **第三人称与命名**: 必须使用第三人称视角。请严格使用“${userNickname}”（代表用户）和“${chat.originalName}”（代表AI角色）来指代对话双方。
-3.  **输出格式**: 你的回复【必须且只能】是一个JSON对象，格式如下：
+- **第三人称与命名**: 必须使用第三人称视角。请严格使用"${userNickname}"（代表用户，不要用用户两个字称呼）和"${chat.originalName}"（代表AI角色）来指代对话双方。
+- **输出格式**: 你的回复【必须且只能】是一个JSON对象，格式如下：
     \`{"summary": "在这里写下你总结好的摘要。"}\`
+    
 # 待总结的对话历史
 ${formattedHistory}${getJailbreakSuffix()}
 
@@ -32778,7 +32804,7 @@ if (isGroup) {
             const customCssInput = document.getElementById('custom-css-input'); customCssInput.value = chat.settings.customCss || '';
             updateSettingsPreview();
             document.getElementById('auto-memory-toggle').checked = chat.settings.enableAutoMemory || false;
-            document.getElementById('auto-memory-interval').value = chat.settings.autoMemoryInterval || 20;
+            document.getElementById('auto-memory-interval').value = chat.settings.autoMemoryInterval || 50;
             showScreen('chat-settings-screen');
         });
         // ▲▲▲ 替换结束 ▲▲▲
@@ -32943,7 +32969,7 @@ if (chat.isGroup) {
                 chat.settings.linkedMemoryChatIds = [];
             }
             chat.settings.enableAutoMemory = document.getElementById('auto-memory-toggle').checked;
-            chat.settings.autoMemoryInterval = parseInt(document.getElementById('auto-memory-interval').value) || 20;
+            chat.settings.autoMemoryInterval = parseInt(document.getElementById('auto-memory-interval').value) || 50;
             await db.chats.put(chat);
             if (!chat.isGroup) {
                 await syncCharacterNameInGroups(chat);
