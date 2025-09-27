@@ -23653,7 +23653,33 @@ async function triggerAutoSummary(chatId, force = false) {
         } else {
             sender = chat.isGroup ? getDisplayNameInGroup(chat, msg.senderName) : (msg.senderName || chat.originalName);
         }
-        return `${sender}: ${String(msg.content)}`;
+        
+        // 智能处理不同类型的消息内容
+        let contentText = '';
+        if (Array.isArray(msg.content)) {
+            // 处理数组类型的消息（通常是图片消息）
+            const textParts = msg.content.filter(part => part.type === 'text');
+            if (textParts.length > 0) {
+                contentText = textParts.map(part => part.text).join(' ');
+            } else {
+                contentText = '[发送了图片]';
+            }
+        } else if (typeof msg.content === 'string') {
+            // 处理普通文本消息
+            contentText = msg.content;
+        } else if (msg.type === 'voice_message') {
+            contentText = '[发送了语音消息]';
+        } else if (msg.type === 'ai_image') {
+            contentText = '[发送了AI生成的图片]';
+        } else if (msg.type === 'transfer') {
+            contentText = `[发起转账：${msg.amount}元]`;
+        } else if (msg.meaning) {
+            contentText = `[发送了表情：${msg.meaning}]`;
+        } else {
+            contentText = String(msg.content || '[系统消息]');
+        }
+        
+        return `${sender}: ${contentText}`;
     }).join('\n');
 
     let systemPrompt;
