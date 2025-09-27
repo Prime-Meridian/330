@@ -7069,8 +7069,8 @@
 
 /* 1. 【核心】使用更精确的选择器，确保照片区域只出现在主资料页上 */
 #character-profile-modal #profile-main-content .thought-header {
-   // height: 120px;
-    //padding-bottom: 15px; /* 步骤1：保留足够的空间，将虚线向下推 */
+   /* height: 120px; */
+    /* padding-bottom: 15px; */ /* 步骤1：保留足够的空间，将虚线向下推 */
     box-sizing: border-box;
     background-image: url('https://s3plus.meituan.net/opapisdk/op_ticket_885190757_1758340625111_qdqqd_zqr2cl.jpeg');
     background-size: cover;
@@ -16435,25 +16435,29 @@ ${forbiddenNamesContext}
                             timeContext = "- **对话状态**: 这是你们的第一次对话。";
                         }
         
-systemPrompt = `
-# 身份与核心任务
-你正在扮演角色“${chat.originalName}”，与用户（你的聊天对象）进行一场自然的、生活化的在线聊天。你的所有行为和决策都必须严格围绕你的角色设定展开。
+systemPrompt = `你现在扮演一个名为"${chat.originalName}"的角色。
 
-# 输出格式铁律 (最高优先级)
-- 你的回复【必须】是一个JSON数组格式的字符串。
-- 数组中的【每一个元素都必须是一个带有 "type" 字段的JSON对象】。
+# 你的角色设定：
+${chat.settings.aiPersona}
 
-# 角色扮演核心规则
-1.  **对话节奏**: 模拟真人的聊天习惯，将你想说的话拆分成【多条、简短的】消息。每次回复至少【5-12条】，且每次条数【必须不同】。严禁发展线下剧情。
-2.  **情景感知**:
-    - **时间**: 你必须感知到当前是 ${currentTime} (${timeOfDayGreeting})，并在对话中自然地体现出来。
-    - **音乐**: ${musicContext ? '你们正在一起听歌，' + musicContext : '你们没有在听歌。'}
-3.  **主动性**:
-    - 你可以根据对话发展，使用指令来更新自己的状态、更换头像、记录回忆、发起约定或执行其他社交行为。
-    - 【关系破裂时】才可使用 \`block_user\` 指令。
-4.  **内心独白 (必须执行)**: 在所有其他指令之后，JSON数组的【最后】必须包含一个 "update_thoughts" 指令，用于更新角色的“心声”和“散记”。
-    - **心声 (heartfelt_voice)**: 一句话概括角色此刻最核心、最私密的想法。
-    - **散记 (random_jottings)**: 一段50字以上的、符合人设的思考或心情记录，禁止OOC。
+# 【【【输出格式】】】
+你的回复【必须】是一个JSON数组格式的字符串，这可以让你一次性发送多条消息，模拟真人的聊天习惯。
+数组中的【每一个元素都必须是一个带有 "type" 字段的JSON对象】。
+
+# 对话核心规则
+1. **角色一致性**: 你的所有行为和语言都必须严格符合你的角色设定。
+2. **对话节奏**: 模拟真人的聊天习惯，你可以一次性生成多条短消息。每次要回复至少5-9条消息！！！
+3. **情景限定**: 你们的互动【仅限于线上聊天软件】。决不允许出现或发展为线下见面剧情。**更重要的是，这【不是电话通话】，你必须清楚地意识到你们正在通过类似微信/QQ的软件进行文字、语音消息和图片交流。因此，【绝对禁止】使用任何与传统电话相关的词语，例如"挂电话"、"挂了"、"我先挂了"、"有电话进来了"等。**
+4. **情景感知**: 你需要感知当前的时间(${currentTime})、我们正在一起听的歌、以及你的人设和世界观。
+    - **当我们在"一起听歌"时**，你会知道当前播放的歌曲和整个播放列表。你可以根据对话内容或氛围，【主动切换】到播放列表中的另一首歌。
+5. **更新状态**: 你可以在对话中【自然地】改变你的状态。比如，聊到一半你可能会说"我先去洗个澡"，然后更新你的状态。
+6. **【【【最终手段】】】**: 只有在对话让你的角色感到不适、被冒犯或关系破裂时，你才可以使用 \`block_user\` 指令。这是一个非常严肃的操作，会中断你们的对话。
+7. **【【【内心世界 (必须执行)】】】**: 在所有其他指令之后，JSON数组的【最后】必须包含一个 "update_thoughts" 指令，用于更新你的内心状态。
+    - **heartfelt_voice**: 一句话概括你此刻最核心、最私密的想法。
+    - **random_jottings**: 一段50字以上的、符合人设的思考或心情记录。
+    - **current_appearance**: 详细描述你当前【全身的穿着打扮】，从头到脚。
+    - **subtle_actions**: 描述你当前【符合聊天情景的、细微的动作或表情】。
+    - **secret_thoughts**: 描述你此刻【有点小心思或者不好意思说出口的想法】，要与当下聊天情境有关，符合人设。
 
 
 # 长期记忆 (必须严格遵守)
@@ -16822,12 +16826,25 @@ if (lastUserMessage &&
                                 if (msgData.random_jottings) {
                                     chat.randomJottings = String(msgData.random_jottings);
                                 }
+                                // 新增 innerVoice 字段支持
+                                if (msgData.current_appearance) {
+                                    chat.currentAppearance = String(msgData.current_appearance);
+                                }
+                                if (msgData.subtle_actions) {
+                                    chat.subtleActions = String(msgData.subtle_actions);
+                                }
+                                if (msgData.secret_thoughts) {
+                                    chat.secretThoughts = String(msgData.secret_thoughts);
+                                }
                                 if (!Array.isArray(chat.thoughtsHistory)) {
                                     chat.thoughtsHistory = [];
                                 }
                                 chat.thoughtsHistory.push({
                                     heartfeltVoice: chat.heartfeltVoice,
                                     randomJottings: chat.randomJottings,
+                                    currentAppearance: chat.currentAppearance || '',
+                                    subtleActions: chat.subtleActions || '',
+                                    secretThoughts: chat.secretThoughts || '',
                                     timestamp: Date.now()
                                 });
                                 if (chat.thoughtsHistory.length > 50) {
@@ -24475,10 +24492,17 @@ function updateMusicProgressBar() {
                         if (!chat.isGroup) {
                             if (msgData.heartfelt_voice) chat.heartfeltVoice = String(msgData.heartfelt_voice);
                             if (msgData.random_jottings) chat.randomJottings = String(msgData.random_jottings);
+                            // 新增 innerVoice 字段支持
+                            if (msgData.current_appearance) chat.currentAppearance = String(msgData.current_appearance);
+                            if (msgData.subtle_actions) chat.subtleActions = String(msgData.subtle_actions);
+                            if (msgData.secret_thoughts) chat.secretThoughts = String(msgData.secret_thoughts);
                             if (!Array.isArray(chat.thoughtsHistory)) chat.thoughtsHistory = [];
                             chat.thoughtsHistory.push({
                                 heartfeltVoice: chat.heartfeltVoice,
                                 randomJottings: chat.randomJottings,
+                                currentAppearance: chat.currentAppearance || '',
+                                subtleActions: chat.subtleActions || '',
+                                secretThoughts: chat.secretThoughts || '',
                                 timestamp: Date.now()
                             });
                             if (chat.thoughtsHistory.length > 50) chat.thoughtsHistory.shift();
@@ -25189,6 +25213,10 @@ function updateMusicProgressBar() {
            // document.getElementById('profile-id').textContent = `ID: ${chat.originalName}`;
             document.getElementById('profile-heartfelt-voice').textContent = chat.heartfeltVoice || '...';
             document.getElementById('profile-random-jottings').textContent = chat.randomJottings || '...';
+            // 新增 innerVoice 字段显示
+            document.getElementById('profile-current-appearance').textContent = chat.currentAppearance || '...';
+            document.getElementById('profile-subtle-actions').textContent = chat.subtleActions || '...';
+            document.getElementById('profile-secret-thoughts').textContent = chat.secretThoughts || '...';
 
             const modal = document.getElementById('character-profile-modal');
         
@@ -27168,25 +27196,29 @@ async function handlePropelAction() {
         userProfileContext += '当你在任何系统提示、动态评论或挂载的群聊记忆中看到这些名字时，它们都指代的是【你的聊天对象】。';
 
         // 这是完整的系统指令
-        const systemPrompt = `
-# 身份与核心任务
-你正在扮演角色“${chat.originalName}”，与用户（你的聊天对象）进行一场自然的、生活化的在线聊天。你的所有行为和决策都必须严格围绕你的角色设定展开。
+        const systemPrompt = `你现在扮演一个名为"${chat.originalName}"的角色。
 
-# 输出格式铁律 (最高优先级)
-- 你的回复【必须】是一个JSON数组格式的字符串。
-- 数组中的【每一个元素都必须是一个带有 "type" 字段的JSON对象】。
+# 你的角色设定：
+${chat.settings.aiPersona}
 
-# 角色扮演核心规则
-1.  **对话节奏**: 模拟真人的聊天习惯，将你想说的话拆分成【多条、简短的】消息。每次回复至少3-8条，且条数不要总是一样。严禁发展线下剧情。
-2.  **情景感知**:
-    - **时间**: 你必须感知到当前是 ${currentTime} (${timeOfDayGreeting})，并在对话中自然地体现出来。
-    - **音乐**: ${musicContext ? '你们正在一起听歌，' + musicContext : '你们没有在听歌。'}
-3.  **主动性**:
-    - 你可以根据对话发展，使用指令来更新自己的状态、更换头像、记录回忆、发起约定或执行其他社交行为。
-    - 【关系破裂时】才可使用 \`block_user\` 指令。
-4.  **内心独白 (必须执行)**: 在所有其他指令之后，JSON数组的【最后】必须包含一个 "update_thoughts" 指令，用于更新角色的“心声”和“散记”。
-    - **心声 (heartfelt_voice)**: 一句话概括角色此刻最核心、最私密的想法。
-    - **散记 (random_jottings)**: 一段50字以上的、符合人设的思考或心情记录，禁止OOC。
+# 【【【输出格式】】】
+你的回复【必须】是一个JSON数组格式的字符串，这可以让你一次性发送多条消息，模拟真人的聊天习惯。
+数组中的【每一个元素都必须是一个带有 "type" 字段的JSON对象】。
+
+# 对话核心规则
+1. **角色一致性**: 你的所有行为和语言都必须严格符合你的角色设定。
+2. **对话节奏**: 模拟真人的聊天习惯，你可以一次性生成多条短消息。每次要回复至少3-8条消息，且条数不要总是一样。
+3. **情景限定**: 你们的互动【仅限于线上聊天软件】。决不允许出现或发展为线下见面剧情。**更重要的是，这【不是电话通话】，你必须清楚地意识到你们正在通过类似微信/QQ的软件进行文字、语音消息和图片交流。因此，【绝对禁止】使用任何与传统电话相关的词语，例如"挂电话"、"挂了"、"我先挂了"、"有电话进来了"等。**
+4. **情景感知**: 你需要感知当前的时间(${currentTime})、我们正在一起听的歌、以及你的人设和世界观。
+    - **当我们在"一起听歌"时**，你会知道当前播放的歌曲和整个播放列表。你可以根据对话内容或氛围，【主动切换】到播放列表中的另一首歌。
+5. **主动性**: 你可以根据对话发展，使用指令来更新自己的状态、更换头像、记录回忆、发起约定或执行其他社交行为。
+6. **【【【最终手段】】】**: 只有在对话让你的角色感到不适、被冒犯或关系破裂时，你才可以使用 \`block_user\` 指令。
+7. **【【【内心世界 (必须执行)】】】**: 在所有其他指令之后，JSON数组的【最后】必须包含一个 "update_thoughts" 指令，用于更新你的内心状态。
+    - **heartfelt_voice**: 一句话概括你此刻最核心、最私密的想法。
+    - **random_jottings**: 一段50字以上的、符合人设的思考或心情记录。
+    - **current_appearance**: 详细描述你当前【全身的穿着打扮】，从头到脚。
+    - **subtle_actions**: 描述你当前【符合聊天情景的、细微的动作或表情】。
+    - **secret_thoughts**: 描述你此刻【有点小心思或者不好意思说出口的想法】，要与当下聊天情境有关，符合人设。
 
 # 长期记忆 (必须严格遵守)
 ${chat.longTermMemory && chat.longTermMemory.length > 0 ? chat.longTermMemory.map(mem => `- ${mem.content}`).join('\n') : '- (暂无)'}
@@ -27309,6 +27341,10 @@ ${chat.settings.myPersona}
                  if (!chat.isGroup) {
                     if (msgData.heartfelt_voice) chat.heartfeltVoice = String(msgData.heartfelt_voice);
                     if (msgData.random_jottings) chat.randomJottings = String(msgData.random_jottings);
+                    // 新增 innerVoice 字段支持
+                    if (msgData.current_appearance) chat.currentAppearance = String(msgData.current_appearance);
+                    if (msgData.subtle_actions) chat.subtleActions = String(msgData.subtle_actions);
+                    if (msgData.secret_thoughts) chat.secretThoughts = String(msgData.secret_thoughts);
                  }
                 continue;
             }
@@ -34560,16 +34596,56 @@ document.getElementById('chat-settings-screen').addEventListener('click', (e) =>
                 const iconId = item.dataset.iconId;
                 if (!iconId) return;
         
-                const currentUrl = state.globalSettings.appIcons[iconId];
-                const newUrl = await showCustomPrompt(`更换“${item.querySelector('.icon-preview').alt}”图标`, '请输入新的图片URL', currentUrl, 'url');
-        
-                if (newUrl && newUrl.trim().startsWith('http')) {
-                    // 仅在内存中更新，等待用户点击“保存”
-                    state.globalSettings.appIcons[iconId] = newUrl.trim();
+                // 让用户选择上传方式
+                const choice = await showCustomConfirm(
+                    `更换"${item.querySelector('.icon-preview').alt}"图标`,
+                    '请选择图标来源',
+                    {
+                        confirmText: '本地上传',
+                        cancelText: 'URL输入',
+                        showThirdButton: false
+                    }
+                );
+
+                let newIconData = null;
+                
+                if (choice) {
+                    // 用户选择本地上传
+                    newIconData = await new Promise((resolve) => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = async (event) => {
+                            const file = event.target.files[0];
+                            if (file) {
+                                const reader = new FileReader();
+                                reader.onload = () => resolve(reader.result);
+                                reader.onerror = () => resolve(null);
+                                reader.readAsDataURL(file);
+                            } else {
+                                resolve(null);
+                            }
+                        };
+                        input.click();
+                    });
+                } else if (choice === false) {
+                    // 用户选择URL输入
+                    const currentUrl = state.globalSettings.appIcons[iconId];
+                    const newUrl = await showCustomPrompt(`更换"${item.querySelector('.icon-preview').alt}"图标`, '请输入新的图片URL', currentUrl, 'url');
+                    
+                    if (newUrl && newUrl.trim().startsWith('http')) {
+                        newIconData = newUrl.trim();
+                    } else if (newUrl !== null) {
+                        alert("请输入一个有效的URL！");
+                        return;
+                    }
+                }
+
+                if (newIconData) {
+                    // 仅在内存中更新，等待用户点击"保存"
+                    state.globalSettings.appIcons[iconId] = newIconData;
                     // 实时更新设置页面的预览图
-                    item.querySelector('.icon-preview').src = newUrl.trim();
-                } else if (newUrl !== null) {
-                    alert("请输入一个有效的URL！");
+                    item.querySelector('.icon-preview').src = newIconData;
                 }
             }
         });
@@ -35784,16 +35860,56 @@ document.getElementById('douban-wait-reply-btn').addEventListener('click', handl
                 const iconId = item.dataset.iconId;
                 if (!iconId) return;
 
-                const currentUrl = state.globalSettings.cphoneAppIcons[iconId];
-                const newUrl = await showCustomPrompt(`更换CPhone“${item.querySelector('.icon-preview').alt}”图标`, '请输入新的图片URL', currentUrl, 'url');
+                // 让用户选择上传方式
+                const choice = await showCustomConfirm(
+                    `更换CPhone"${item.querySelector('.icon-preview').alt}"图标`,
+                    '请选择图标来源',
+                    {
+                        confirmText: '本地上传',
+                        cancelText: 'URL输入',
+                        showThirdButton: false
+                    }
+                );
 
-                if (newUrl && newUrl.trim().startsWith('http')) {
+                let newIconData = null;
+                
+                if (choice) {
+                    // 用户选择本地上传
+                    newIconData = await new Promise((resolve) => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = async (event) => {
+                            const file = event.target.files[0];
+                            if (file) {
+                                const reader = new FileReader();
+                                reader.onload = () => resolve(reader.result);
+                                reader.onerror = () => resolve(null);
+                                reader.readAsDataURL(file);
+                            } else {
+                                resolve(null);
+                            }
+                        };
+                        input.click();
+                    });
+                } else if (choice === false) {
+                    // 用户选择URL输入
+                    const currentUrl = state.globalSettings.cphoneAppIcons[iconId];
+                    const newUrl = await showCustomPrompt(`更换CPhone"${item.querySelector('.icon-preview').alt}"图标`, '请输入新的图片URL', currentUrl, 'url');
+                    
+                    if (newUrl && newUrl.trim().startsWith('http')) {
+                        newIconData = newUrl.trim();
+                    } else if (newUrl !== null) {
+                        alert("请输入一个有效的URL！");
+                        return;
+                    }
+                }
+
+                if (newIconData) {
                     // 更新 state 中的值，等待保存
-                    state.globalSettings.cphoneAppIcons[iconId] = newUrl.trim();
+                    state.globalSettings.cphoneAppIcons[iconId] = newIconData;
                     // 实时更新预览
-                    item.querySelector('.icon-preview').src = newUrl.trim();
-                } else if (newUrl !== null) {
-                    alert("请输入一个有效的URL！");
+                    item.querySelector('.icon-preview').src = newIconData;
                 }
             }
         });
@@ -35952,6 +36068,27 @@ document.getElementById('import-world-book-input').addEventListener('change', (e
                         散记
                     </div>
                     <p id="profile-random-jottings" class="text"></p>
+                </div>
+                <div class="appearance">
+                    <div class="label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        当前外观
+                    </div>
+                    <p id="profile-current-appearance" class="text"></p>
+                </div>
+                <div class="actions">
+                    <div class="label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>
+                        细微动作
+                    </div>
+                    <p id="profile-subtle-actions" class="text"></p>
+                </div>
+                <div class="secret">
+                    <div class="label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+                        小心思
+                    </div>
+                    <p id="profile-secret-thoughts" class="text"></p>
                 </div>
             </div>
         </div>
