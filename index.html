@@ -14971,7 +14971,19 @@ async function loadAllDataFromDB() {
          * 【总入口】打开批量导入表情的弹窗
          */
         async function openBatchStickerImportModal() {
-            const placeholderText = `请按照以下格式粘贴，一行一个：\n\n焦虑 2a9wte.jpeg\n大惊失色 or8qf4.png\n没有灵感 njwujh.jpeg`;
+            const placeholderText = `请按照以下任一格式粘贴，一行一个：
+
+格式1（推荐）：URL,名称
+http://example.com/image.png,开心
+http://example.com/gif.gif,哈哈
+
+格式2：名称：URL
+焦虑：http://example.com/image.jpg
+大惊失色：http://example.com/image.png
+
+格式3：名称 文件名（仅限catbox.moe）
+焦虑 2a9wte.jpeg
+大惊失色 or8qf4.png`;
             
             const pastedText = await showCustomPrompt(
                 '批量导入表情',
@@ -14985,9 +14997,9 @@ async function loadAllDataFromDB() {
             }
         }
         
-        // ▼▼▼ 【最终修复版】请用这个全新的函数，完整替换旧的 handleBatchStickerImport 函数 ▼▼▼
+        // ▼▼▼ 【升级版 V4.0】支持多种格式的批量导入功能 ▼▼▼
         /**
-         * 【核心逻辑 | V3.0 - 已修复URL格式BUG】处理粘贴的文本，解析并存入数据库
+         * 【核心逻辑 | V4.0 - 支持URL,名称格式】处理粘贴的文本，解析并存入数据库
          * @param {string} text - 用户粘贴的文本内容
          */
         async function handleBatchStickerImport(text) {
@@ -15000,14 +15012,29 @@ async function loadAllDataFromDB() {
             for (const line of lines) {
                 const trimmedLine = line.trim();
 
-                // ▼▼▼ 核心修复：移除了错误的 `trimmedLine.includes('http')` 判断 ▼▼▼
-                // 现在只跳过空行或示例行
-                if (!trimmedLine || trimmedLine.includes('填入')) {
+                // 跳过空行、示例行或注释行
+                if (!trimmedLine || trimmedLine.includes('填入') || trimmedLine.includes('example.com') || trimmedLine.startsWith('格式')) {
                     continue;
                 }
-                // ▲▲▲ 修复结束 ▲▲▲
 
-                // 优先匹配 “名称：URL” 格式
+                // ▼▼▼ 【新增】优先匹配 "URL,名称" 格式（用户最需要的） ▼▼▼
+                const urlCommaNameMatch = trimmedLine.match(/^(https?:\/\/.+?),(.+)$/);
+                if (urlCommaNameMatch) {
+                    const url = urlCommaNameMatch[1].trim();
+                    const name = urlCommaNameMatch[2].trim();
+                    if (name) {  // 确保名称不为空
+                        newStickers.push({
+                            id: 'sticker_' + Date.now() + Math.random(),
+                            name: name,
+                            url: url,
+                            categoryId: currentCategoryId
+                        });
+                        continue;
+                    }
+                }
+                // ▲▲▲ 新格式支持结束 ▲▲▲
+
+                // 其次匹配 "名称：URL" 格式
                 const fullUrlMatch = trimmedLine.match(/^(.+?)[:：]\s*(https?:\/\/.+)$/);
                 
                 if (fullUrlMatch) {
@@ -15022,7 +15049,7 @@ async function loadAllDataFromDB() {
                     continue; 
                 }
 
-                // 如果上面没匹配成功，则尝试匹配旧的 catbox.moe 格式
+                // 最后尝试匹配旧的 catbox.moe 格式
                 let name = null;
                 let code = null;
                 const noSpaceMatch = trimmedLine.match(/^([\u4e00-\u9fa5]+)([a-zA-Z0-9]+\..+)$/);
@@ -23406,8 +23433,11 @@ ${transcriptText}${getJailbreakSuffix()}
         
         const data = await response.json();
         let rawContent = isGemini ? getGeminiResponseText(data) : data.choices[0].message.content;
-        rawContent = rawContent.replace(/^```json\s*/, '').replace(/```$/, '').trim();
-        const result = JSON.parse(rawContent);
+        const result = robustJsonParse(rawContent);
+
+        if (!result) {
+            throw new Error('AI返回的内容无法解析为有效的总结格式');
+        }
 
         if (result.summary && result.summary.trim()) {
             const newMemoryEntry = {
@@ -23720,8 +23750,11 @@ ${formattedHistory}${getJailbreakSuffix()}
         if (!response.ok) throw new Error(`API 错误: ${response.statusText}`);
         const data = await response.json();
         let rawContent = isGemini ? getGeminiResponseText(data) : data.choices[0].message.content;
-        rawContent = rawContent.replace(/^```json\s*/, '').replace(/```$/, '').trim();
-        const result = JSON.parse(rawContent);
+        const result = robustJsonParse(rawContent);
+
+        if (!result) {
+            throw new Error('AI返回的内容无法解析为有效的总结格式');
+        }
 
         // ▼▼▼ 核心修改：根据聊天类型，执行不同的记忆保存逻辑 ▼▼▼
         if (chat.isGroup) {
@@ -23831,8 +23864,11 @@ ${transcriptText}
         
         const data = await response.json();
         let rawContent = isGemini ? getGeminiResponseText(data) : data.choices[0].message.content;
-        rawContent = rawContent.replace(/^```json\s*/, '').replace(/```$/, '').trim();
-        const result = JSON.parse(rawContent);
+        const result = robustJsonParse(rawContent);
+
+        if (!result) {
+            throw new Error('AI返回的内容无法解析为有效的总结格式');
+        }
 
         if (result.summary && result.summary.trim()) {
             const newMemoryEntry = {
@@ -36339,6 +36375,7 @@ document.getElementById('import-world-book-input').addEventListener('change', (e
 <!-- ▲▲▲ 新增HTML结束 ▲▲▲ -->
 </body>
 </html>
+
 
 
 
