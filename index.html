@@ -11533,7 +11533,7 @@ const DEFAULT_NOTIFICATION_SOUND = 'https://www.myinstants.com/media/sounds/noti
         };
         // ▲▲▲ 新增代码结束 ▲▲▲
         let repostTargetId = null; // 用于存储当前要转发的动态ID
-                const STICKER_REGEX = /^(https:\/\/i\.postimg\.cc\/.+|https:\/\/files\.catbox\.moe\/.+|data:image)/;
+                const STICKER_REGEX = /^(https?:\/\/.+\.(png|jpg|jpeg|gif|webp|bmp|svg)(\?.*)?$|https:\/\/i\.postimg\.cc\/.+|https:\/\/files\.catbox\.moe\/.+|data:image)/i;
                 const MESSAGE_RENDER_WINDOW = 50;
                 let currentRenderedCount = 0;
                 let lastKnownBatteryLevel = 1;
