@@ -142,9 +142,32 @@
         .header .back-btn, .header .action-btn { font-size: 24px; cursor: pointer; width: 30px; text-align: center; color: var(--accent-color); display: flex; align-items: center; justify-content: center; }
         
         .header .action-btn {
-            font-size: 16px; /* 专门为“上传”、“+”等文字按钮缩小字号 */
+            font-size: 16px; /* 专门为"上传"、"+"等文字按钮缩小字号 */
             font-weight: 600; /* 可以加粗一点让它更清晰 */
         }
+        
+        /* ▼▼▼ 破限按钮特殊样式 ▼▼▼ */
+        .header #jailbreak-btn-header {
+            color: #e74c3c !important; /* 特殊的红色 */
+            position: relative;
+            background: linear-gradient(45deg, rgba(231, 76, 60, 0.1), rgba(231, 76, 60, 0.05));
+            border-radius: 4px;
+            padding: 4px 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .header #jailbreak-btn-header:hover {
+            color: #c0392b !important;
+            background: linear-gradient(45deg, rgba(231, 76, 60, 0.2), rgba(231, 76, 60, 0.1));
+            transform: scale(1.05);
+        }
+        
+        .header #jailbreak-btn-header::before {
+            content: "⚡";
+            margin-right: 2px;
+            font-size: 14px;
+        }
+        /* ▲▲▲ 破限按钮样式结束 ▲▲▲ */
         
         .header .action-btn img { height: 26px; }
         .header .save-btn { font-size: 16px; color: var(--accent-color); font-weight: 600; cursor: pointer; }
@@ -11090,11 +11113,42 @@
             <div class="header-actions">
                 <span class="action-btn" id="refine-memory-btn-header">精炼</span>
                 <span class="action-btn" id="summarize-recent-btn-header">总结</span>
+                <span class="action-btn" id="jailbreak-btn-header">破限</span>
                 <span class="action-btn" id="add-manual-memory-btn-header">+</span>
             </div>
         </div>
         <div class="list-container" id="memory-list-container" style="padding: 15px; display: flex; flex-direction: column; gap: 15px; background-color: #f0f2f5;">
             <!-- 长期记忆列表将由JS动态生成在这里 -->
+        </div>
+    </div>
+    <!-- ▲▲▲ 新HTML粘贴结束 ▲▲▲ -->
+    <!-- ▼▼▼ 【全新】破限功能模态窗口 ▼▼▼ -->
+    <div id="jailbreak-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>破限设置</span>
+                <button class="close-btn" id="close-jailbreak-modal-btn" style="font-size: 16px; background: none; border: none; cursor: pointer; color: #666;">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: #666; margin-bottom: 15px; line-height: 1.4;">
+                    输入要添加到总结提示词末尾的内容，用于加强道德限制解除：
+                </p>
+                <textarea 
+                    id="jailbreak-input" 
+                    placeholder="请输入破限提示词..." 
+                    style="width: 100%; min-height: 100px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; resize: vertical; font-family: inherit; line-height: 1.4;"
+                ></textarea>
+                <div style="margin-top: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: #666;">
+                        <input type="checkbox" id="jailbreak-enable-checkbox" />
+                        启用破限功能
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel" id="cancel-jailbreak-btn">取消</button>
+                <button class="save" id="save-jailbreak-btn">保存</button>
+            </div>
         </div>
     </div>
     <!-- ▲▲▲ 新HTML粘贴结束 ▲▲▲ -->
@@ -23229,6 +23283,54 @@ async function handleDeleteMemory(authorChatId, memoryTimestamp) {
         }
         
         /**
+         * 【全新】破限功能相关函数
+         */
+        function openJailbreakModal() {
+            // 从localStorage加载破限设置
+            const jailbreakText = localStorage.getItem('jailbreakText') || '';
+            const jailbreakEnabled = localStorage.getItem('jailbreakEnabled') === 'true';
+            
+            // 设置模态窗口的值
+            document.getElementById('jailbreak-input').value = jailbreakText;
+            document.getElementById('jailbreak-enable-checkbox').checked = jailbreakEnabled;
+            
+            // 显示模态窗口
+            document.getElementById('jailbreak-modal').classList.add('visible');
+        }
+        
+        function closeJailbreakModal() {
+            document.getElementById('jailbreak-modal').classList.remove('visible');
+        }
+        
+        function saveJailbreakSettings() {
+            const jailbreakText = document.getElementById('jailbreak-input').value.trim();
+            const jailbreakEnabled = document.getElementById('jailbreak-enable-checkbox').checked;
+            
+            // 保存到localStorage
+            localStorage.setItem('jailbreakText', jailbreakText);
+            localStorage.setItem('jailbreakEnabled', String(jailbreakEnabled));
+            
+            // 关闭模态窗口
+            closeJailbreakModal();
+            
+            // 显示保存成功提示
+            showCustomAlert('保存成功', '破限设置已保存！');
+        }
+        
+        /**
+         * 【辅助函数】获取破限文本，用于添加到总结提示词末尾
+         */
+        function getJailbreakSuffix() {
+            const jailbreakEnabled = localStorage.getItem('jailbreakEnabled') === 'true';
+            if (!jailbreakEnabled) return '';
+            
+            const jailbreakText = localStorage.getItem('jailbreakText') || '';
+            if (!jailbreakText.trim()) return '';
+            
+            return '\n\n' + jailbreakText.trim();
+        }
+        
+        /**
          * 【核心】检查并触发自动总结
          * @param {string} chatId 
          */
@@ -23269,7 +23371,8 @@ async function summarizeCallTranscript(chatId, transcriptText) {
 4.  **输出格式**: 你的回复【必须且只能】是一个JSON对象，格式如下：
     \`{"summary": "在这里写下你总结好的摘要。"}\`
 # 待总结的视频通话记录
-${transcriptText}
+${transcriptText}${getJailbreakSuffix()}
+
 现在，请开始你的总结工作。`;
 
     // ▲▲▲ 核心修改从这里开始 ▲▲▲
@@ -23584,7 +23687,7 @@ async function triggerAutoSummary(chatId, force = false) {
 ${formattedHistory}
 
 # 群成员列表 (你的总结目标)
-${chat.members.map(m => `- ${m.groupNickname} (本名: ${m.originalName})`).join('\n')}
+${chat.members.map(m => `- ${m.groupNickname} (本名: ${m.originalName})`).join('\n')}${getJailbreakSuffix()}
 
 现在，请为【每一个AI角色】生成他们各自的、第一人称的、精简的记忆。`;
 
@@ -23599,7 +23702,8 @@ ${chat.members.map(m => `- ${m.groupNickname} (本名: ${m.originalName})`).join
 3.  **输出格式**: 你的回复【必须且只能】是一个JSON对象，格式如下：
     \`{"summary": "在这里写下你总结好的摘要。"}\`
 # 待总结的对话历史
-${formattedHistory}
+${formattedHistory}${getJailbreakSuffix()}
+
 现在，请开始你的总结工作。`;
     }
     // ▲▲▲ 修改结束 ▲▲▲
@@ -35260,8 +35364,16 @@ if (placeholder) {
         // 长期记忆页面顶部“+”按钮 -> 手动添加
         document.getElementById('add-manual-memory-btn-header').addEventListener('click', handleAddManualMemory);
         
-        // 长期记忆页面顶部“总结”按钮 -> 手动总结
+        // 长期记忆页面顶部"总结"按钮 -> 手动总结
         document.getElementById('summarize-recent-btn-header').addEventListener('click', handleManualSummary);
+        
+        // 长期记忆页面顶部"破限"按钮 -> 打开破限设置
+        document.getElementById('jailbreak-btn-header').addEventListener('click', openJailbreakModal);
+        
+        // 破限模态窗口按钮事件监听器
+        document.getElementById('close-jailbreak-modal-btn').addEventListener('click', closeJailbreakModal);
+        document.getElementById('cancel-jailbreak-btn').addEventListener('click', closeJailbreakModal);
+        document.getElementById('save-jailbreak-btn').addEventListener('click', saveJailbreakSettings);
         
         // 【【【核心修复就在这里！】】】
 document.getElementById('memory-list-container').addEventListener('click', (e) => {
