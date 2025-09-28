@@ -10047,6 +10047,12 @@
                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                 </svg>
             </span>
+            <span class="action-btn" id="douban-settings-btn" title="豆瓣设置">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m11-7a4 4 0 0 1-8 0m8 14a4 4 0 0 1-8 0"></path>
+                </svg>
+            </span>
             <span class="action-btn" id="regenerate-douban-btn" title="重新生成内容">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 11A8.1 8.1 0 0 0 4.5 9M4 5v4h4"></path>
@@ -31344,6 +31350,26 @@ async function handleGenerateDoubanPosts() {
         });
     }
     
+    // ▼▼▼ 【新增】处理用户自定义的大事件和NPC设置 ▼▼▼
+    const customEvent = state.globalSettings.doubanEvent || '';
+    const customNpcInfo = state.globalSettings.doubanNpcInfo || '';
+    
+    // 处理用户自定义的NPC角色信息
+    let customNpcCharacters = [];
+    if (customNpcInfo.trim()) {
+        const npcLines = customNpcInfo.split('\n').filter(line => line.trim());
+        npcLines.forEach(line => {
+            const parts = line.split('|');
+            if (parts.length >= 2) {
+                const name = parts[0].trim();
+                const persona = parts.slice(1).join('|').trim(); // 支持人设中包含 | 符号
+                if (name && persona) {
+                    customNpcCharacters.push({ name, persona });
+                }
+            }
+        });
+    }
+    
     const doubanWorldBook = state.worldBooks.find(wb => wb.name === '豆瓣设定');
     let doubanSettingContext = '';
     let npcCharacters = [];
@@ -31363,6 +31389,12 @@ async function handleGenerateDoubanPosts() {
             }
         });
     }
+    
+    // 【重要】优先使用用户自定义的NPC，如果没有则使用世界书中的NPC
+    if (customNpcCharacters.length > 0) {
+        npcCharacters = customNpcCharacters;
+    }
+    // ▲▲▲ 新增自定义设置处理结束 ▲▲▲
 
     // ▲▲▲ 核心修改1：获取用户的昵称和人设 ▲▲▲
     const userNickname = state.qzoneSettings.nickname || '我';
@@ -31457,7 +31489,7 @@ ${doubanSettingContext}
 ${sharedWorldBookContext}
 
 # 当前情景
-- **当前真实时间**: ${currentTimeString}
+- **当前真实时间**: ${currentTimeString}${customEvent ? `\n- **当前大事件**: ${customEvent}` : ''}${customEvent ? '\n  【重要】请让帖子内容自然地围绕或涉及这个大事件进行讨论，让社区氛围更加真实。' : ''}
 
 # 【你的聊天对象（用户）的身份档案】
 - **昵称**: ${userNickname}
@@ -31861,6 +31893,50 @@ async function saveDoubanCastSelection() {
 }
 // ▲▲▲ 新增函数结束 ▲▲▲
 
+// ▼▼▼ 【新增】豆瓣设置功能的JavaScript函数 ▼▼▼
+/**
+ * 打开豆瓣设置弹窗
+ */
+function openDoubanSettings() {
+    // 加载当前保存的设置
+    const eventInput = document.getElementById('douban-event-input');
+    const npcInput = document.getElementById('douban-npc-input');
+    
+    eventInput.value = state.globalSettings.doubanEvent || '';
+    npcInput.value = state.globalSettings.doubanNpcInfo || '';
+    
+    document.getElementById('douban-settings-modal').classList.add('visible');
+}
+
+/**
+ * 保存豆瓣设置
+ */
+async function saveDoubanSettings() {
+    const eventInput = document.getElementById('douban-event-input');
+    const npcInput = document.getElementById('douban-npc-input');
+    
+    // 保存设置到全局状态
+    state.globalSettings.doubanEvent = eventInput.value.trim();
+    state.globalSettings.doubanNpcInfo = npcInput.value.trim();
+    
+    // 持久化保存
+    await db.globalSettings.put(state.globalSettings);
+    
+    // 关闭弹窗
+    document.getElementById('douban-settings-modal').classList.remove('visible');
+    
+    // 显示保存成功提示
+    await showCustomAlert("设置已保存", "豆瓣设置已保存成功！点击重新生成按钮即可应用新设置。");
+}
+
+/**
+ * 取消豆瓣设置
+ */
+function cancelDoubanSettings() {
+    document.getElementById('douban-settings-modal').classList.remove('visible');
+}
+// ▲▲▲ 新增豆瓣设置函数结束 ▲▲▲
+
 // ▼▼▼ 在 init() 函数的事件监听器区域，粘贴下面这整块代码 ▼▼▼
 // 绑定豆瓣角色选择功能的按钮
 document.getElementById('douban-cast-select-btn').addEventListener('click', openDoubanCastSelector);
@@ -31868,6 +31944,10 @@ document.getElementById('cancel-douban-cast-btn').addEventListener('click', () =
     document.getElementById('douban-cast-modal').classList.remove('visible');
 });
 document.getElementById('save-douban-cast-btn').addEventListener('click', saveDoubanCastSelection);
+// 绑定豆瓣设置功能的按钮
+document.getElementById('douban-settings-btn').addEventListener('click', openDoubanSettings);
+document.getElementById('cancel-douban-settings-btn').addEventListener('click', cancelDoubanSettings);
+document.getElementById('save-douban-settings-btn').addEventListener('click', saveDoubanSettings);
 // 使用事件委托，为列表项的点击添加切换选中状态的功能
 document.getElementById('douban-cast-list').addEventListener('click', (e) => {
     const item = e.target.closest('.contact-picker-item');
@@ -36674,6 +36754,40 @@ document.getElementById('import-world-book-input').addEventListener('change', (e
 <!-- ▲▲▲ 替换结束 ▲▲▲ -->
 <audio id="char-audio-player" preload="auto"></audio>
 <!-- ▼▼▼ 【全新】豆瓣角色选择弹窗 ▼▼▼ -->
+<!-- 豆瓣设置弹窗 -->
+<div id="douban-settings-modal" class="modal">
+    <div class="modal-content" style="height: 80%; max-width: 400px;">
+        <div class="modal-header">
+            <span>豆瓣设置</span>
+        </div>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 20px;">
+            <div>
+                <h4 style="margin: 0 0 10px 0; color: var(--text-primary); font-size: 16px;">📅 大事件设置</h4>
+                <textarea 
+                    id="douban-event-input" 
+                    placeholder="请输入当前发生的大事件，豆瓣会围绕这个事件进行讨论（可留空随机生成）&#10;例如：今天是春节，新年放假，大家都在聊过年的话题"
+                    style="width: 100%; min-height: 100px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; resize: vertical; font-size: 14px; line-height: 1.4; box-sizing: border-box;"
+                ></textarea>
+            </div>
+            <div>
+                <h4 style="margin: 0 0 10px 0; color: var(--text-primary); font-size: 16px;">👥 NPC角色信息</h4>
+                <textarea 
+                    id="douban-npc-input" 
+                    placeholder="请输入NPC角色信息，每行一个角色，格式：昵称|人设描述&#10;例如：&#10;小明|大学生，喜欢摄影和美食&#10;丽丽|职场白领，热爱读书和旅游&#10;阿超|程序员，二次元爱好者"
+                    style="width: 100%; min-height: 120px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; resize: vertical; font-size: 14px; line-height: 1.4; box-sizing: border-box;"
+                ></textarea>
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary); background-color: var(--secondary-bg); padding: 8px; border-radius: 6px;">
+                💡 提示：如果都不填写，将使用随机生成的内容。NPC角色会参与帖子的发布和评论，让社区更加生动。
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="cancel" id="cancel-douban-settings-btn">取消</button>
+            <button class="save" id="save-douban-settings-btn">保存</button>
+        </div>
+    </div>
+</div>
+
 <div id="douban-cast-modal" class="modal">
     <div class="modal-content" style="height: 70%;">
         <div class="modal-header">
