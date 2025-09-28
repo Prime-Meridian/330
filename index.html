@@ -18844,14 +18844,41 @@ function runBackgroundSimulationTick() {
                 dynamicContext = postsContext;
             }
         
-    // ▼▼▼ 核心修改：在这里构建长期记忆上下文 ▼▼▼
-    const longTermMemoryContext = `# 长期记忆 (最高优先级，这是你和用户之间已经确立的事实，必须严格遵守)
-${chat.longTermMemory && chat.longTermMemory.length > 0 ? chat.longTermMemory.map(mem => `- ${mem.content}`).join('\n') : '- (暂无)'}`;
+    // ▼▼▼ 核心修改：在这里构建完整的上下文（包含长期记忆和最近对话）▼▼▼
+    const userDisplayNameForAI = (userNickname === '{{user}}' || !userNickname) ? '用户' : userNickname;
+    
+    // 使用完整的上下文构造函数，就像正常聊天时一样
+    const longTermMemoryContext = buildLongTermMemoryContext(chat, chatId) || '无';
+    
+    // 获取最近的对话历史作为上下文
+    const recentHistoryWithUser = chat.history.slice(-15).map(msg => {
+        const sender = msg.role === 'user' ? userDisplayNameForAI : chat.name;
+        let contentText = String(msg.content);
+        if (msg.type === 'ai_image' || msg.type === 'user_photo') {
+            contentText = `[发送了一张图片，描述为：${msg.content}]`;
+        } else if (msg.type === 'voice_message') {
+            contentText = `[发送了一条语音，内容是：${msg.content}]`;
+        }
+        // 截取内容避免过长
+        if (contentText.length > 100) {
+            contentText = contentText.substring(0, 100) + '...';
+        }
+        return `${sender}: ${contentText}`;
+    }).join('\n');
+    
+    // 构建完整的记忆和对话上下文
+    const fullContextForAI = `${longTermMemoryContext}
+
+# 最近的对话上下文（让你了解当前的对话状态和氛围）
+${recentHistoryWithUser ? recentHistoryWithUser : '- (暂无最近对话)'}
+
+# 重要提醒
+基于上面的长期记忆和最近对话，你应该能够自然地延续之前的话题和情感状态，而不是突兀地开启全新话题。`;
     // ▲▲▲ 修改结束 ▲▲▲  
             const systemPrompt = `
         # 你的任务
         你现在扮演一个名为"${chat.name}"的角色（你的本名是"${chat.originalName}"）。你已经有一段时间没有和用户（${userNickname}）互动了，现在你有机会【主动】做点什么，来表现你的个性和独立生活。这是一个秘密的、后台的独立行动。
-${longTermMemoryContext}        
+${fullContextForAI}        
         # 【【【最高优先级指令：情感维系】】】
         **你与用户的关系是最重要的！** 相比于在动态区闲逛，你应该【优先考虑】是否需要主动给用户发消息来维系你们的感情。
         ${ longTimeNoSee ? `**【【【当前紧急情况】】】: 你们已经很久没聊天了！你【必须、一定、务必】将本次行动的重点放在使用 'text' 指令给用户发消息，主动开启一个新的、有趣的话题来重新建立联系。绝对不要只是点赞或评论动态，那会显得你很冷漠！**` : ''}
@@ -18911,7 +18938,6 @@ ${longTermMemoryContext}
         ${linkedMemoryContext}
         -   **当前时间**: ${now.toLocaleString('zh-CN', { dateStyle: 'full', timeStyle: 'short' })}
         -   **对话状态**: ${timeContextText}
-        -   **你们最后的对话摘要**: ${recentContextSummary}
         ${dynamicContext}`;
     // 步骤 3: 【【【这就是最关键的修复！】】】
     // 我们现在不仅发送 System Prompt，还把最近的10条原始对话记录也一并发送过去！
@@ -19260,14 +19286,15 @@ for (const action of responseArray) {
                 }
         
                 const membersList = chat.members.map(m => `- **${m.groupNickname}** (本名: ${m.originalName}): ${m.persona}`).join('\n');
-        // ▼▼▼ 核心修改：在这里构建跨角色的长期记忆上下文 (和 triggerAiResponse 一样) ▼▼▼
+        // ▼▼▼ 核心修改：构建完整的上下文（包含长期记忆和最近对话）▼▼▼
+        // 构建长期记忆上下文
         let longTermMemoryContext = '# 长期记忆 (最高优先级，这是群内已经确立的事实，所有角色必须严格遵守)\n';
         let collectedMemories = false;
         
         chat.members.forEach(member => {
             const memberChat = state.chats[member.id];
             if (memberChat && memberChat.longTermMemory && memberChat.longTermMemory.length > 0) {
-                longTermMemoryContext += `\n## --- 关于“${member.groupNickname}”的记忆 ---\n`;
+                longTermMemoryContext += `\n## --- 关于"${member.groupNickname}"的记忆 ---\n`;
                 longTermMemoryContext += memberChat.longTermMemory.map(mem => `- ${mem.content}`).join('\n');
                 collectedMemories = true;
             }
@@ -19276,6 +19303,31 @@ for (const action of responseArray) {
         if (!collectedMemories) {
             longTermMemoryContext += '- (暂无)';
         }
+
+        // 构建最近的对话上下文
+        const recentChatHistory = chat.history.filter(m => !m.isHidden).slice(-15).map(msg => {
+            const sender = msg.role === 'user' ? myNickname : getDisplayNameInGroup(chat, msg.senderName);
+            let content = String(msg.content || msg.message || '');
+            if (msg.type === 'ai_image' || msg.type === 'user_photo') {
+                content = `[发送了一张图片，描述为：${content}]`;
+            } else if (msg.type === 'voice_message') {
+                content = `[发送了一条语音，内容是：${content}]`;
+            }
+            // 截取内容避免过长
+            if (content.length > 100) {
+                content = content.substring(0, 100) + '...';
+            }
+            return `${sender}: ${content}`;
+        }).join('\n');
+
+        // 构建完整的上下文
+        const fullGroupContext = `${longTermMemoryContext}
+
+# 最近的群聊对话上下文（让你了解当前的群聊状态和氛围）
+${recentChatHistory ? recentChatHistory : '- (暂无最近对话)'}
+
+# 重要提醒
+基于上面的长期记忆和最近对话，你应该能够自然地延续之前的话题和情感状态，参考群里的聊天氛围进行互动。`;
         // ▲▲▲ 修改结束 ▲▲▲
         // ▼▼▼ 在 triggerGroupAiAction 函数中，用下面这整块代码替换旧的世界书处理逻辑 ▼▼▼
         let worldBookContent = '';
@@ -19416,8 +19468,8 @@ for (const action of responseArray) {
 1.  你的核心任务是**导演一场生动的群聊**，而不仅仅是让角色轮流发言。
 2.  当有多个角色在同一轮发言时，他们的对话【必须】有逻辑上的前后关联。后面的角色应该**回应、反驳、或补充**前面角色的发言。
 3.  模拟真实的聊天节奏。可以是一个角色提出问题，另一个角色立刻回答；或者一个角色开玩笑，另一个角色吐槽。
-4.  你【绝对不能】生成几段毫无关联的独白。这会让对话显得非常机械和不真实。        
-${longTermMemoryContext}
+        4.  你【绝对不能】生成几段毫无关联的独白。这会让对话显得非常机械和不真实。        
+${fullGroupContext}
         
         # 核心规则
         你的回复【必须】是一个JSON数组，可以包含一个或多个行动对象。每个对象的 "name" 字段【必须】是角色的【本名】。你【绝对不能】生成 "name" 字段为 "${myNickname}" 的消息。严格遵守每个角色的设定，禁止出戏。
@@ -19432,8 +19484,6 @@ ${longTermMemoryContext}
 - 当你想明确地针对群内【任何成员】（包括用户或其他AI角色）之前的某一句具体的话进行回复时，你就应该使用这个功能。
 - 这会让你的回复上方出现一个灰色的小框，里面是被你引用的那句话，这样对话就不会乱了。
 - 指令格式: '{"type": "quote_reply", "target_timestamp": (你想引用的那句话的时间戳), "reply_content": "你的回复内容"}'
-        # 长期记忆 (最高优先级，这是群内已经确立的事实，所有角色必须严格遵守)
-        ${chat.longTermMemory && chat.longTermMemory.length > 0 ? chat.longTermMemory.map(mem => `- ${mem.content}`).join('\n') : '- (暂无)'}
         # 当前群聊信息
         - **群名称**: ${chat.name}
         ${worldBookContent}
@@ -19445,9 +19495,6 @@ ${longTermMemoryContext}
         
         # 用户的角色
         - **${myNickname}**: ${chat.settings.myPersona}
-        
-        # 最近的对话摘要 (供你参考)
-        ${recentContextSummary}
         
         # 最近的动态列表 (供你参考和评论)
         ${dynamicContext}
