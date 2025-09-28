@@ -11122,6 +11122,7 @@
     <div id="long-term-memory-screen" class="screen">
         <div class="header">
             <span class="back-btn" id="memory-screen-back-btn">‹</span>
+            <span class="action-btn" id="summary-prompt-settings-btn" title="总结提示词设置" style="margin-left: 10px; margin-right: auto;">⚙️</span>
             <span>长期记忆</span>
             <div class="header-actions">
                 <span class="action-btn" id="refine-memory-btn-header">精炼</span>
@@ -11135,6 +11136,78 @@
         </div>
     </div>
     <!-- ▲▲▲ 新HTML粘贴结束 ▲▲▲ -->
+    <!-- ▼▼▼ 【新增】总结提示词设置模态窗口 ▼▼▼ -->
+    <div id="summary-prompt-modal" class="modal">
+        <div class="modal-content" style="max-width: 650px;">
+            <div class="modal-header">
+                <span>总结提示词设置</span>
+                <button class="close-btn" id="close-summary-prompt-modal-btn" style="font-size: 16px; background: none; border: none; cursor: pointer; color: #666;">×</button>
+            </div>
+            <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="dialog-summary-prompt" style="font-weight: 600; margin-bottom: 8px; display: block; color: #333;">对话总结提示词</label>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 10px;">用于自动总结对话内容生成长期记忆</p>
+                    <textarea 
+                        id="dialog-summary-prompt" 
+                        style="width: 100%; height: 150px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; font-family: 'Courier New', monospace; resize: vertical;"
+                    ></textarea>
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="call-summary-prompt" style="font-weight: 600; margin-bottom: 8px; display: block; color: #333;">通话总结提示词</label>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 10px;">用于总结视频通话记录</p>
+                    <textarea 
+                        id="call-summary-prompt" 
+                        style="width: 100%; height: 120px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; font-family: 'Courier New', monospace; resize: vertical;"
+                    ></textarea>
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="memory-refine-prompt" style="font-weight: 600; margin-bottom: 8px; display: block; color: #333;">记忆精炼提示词</label>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 10px;">用于精炼和整合长期记忆内容</p>
+                    <textarea 
+                        id="memory-refine-prompt" 
+                        style="width: 100%; height: 120px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; font-family: 'Courier New', monospace; resize: vertical;"
+                    ></textarea>
+                </div>
+                <div style="margin-top: 15px; padding: 12px; background-color: #f8f9fa; border-radius: 6px; border-left: 3px solid #007bff;">
+                    <p style="font-size: 12px; color: #495057; margin: 0; line-height: 1.5;">
+                        <strong>💡 提示：</strong>可以在提示词中使用以下变量：<br>
+                        • <code style="background:#e9ecef;padding:1px 4px;border-radius:3px;">${userNickname}</code> - 用户昵称<br>
+                        • <code style="background:#e9ecef;padding:1px 4px;border-radius:3px;">${chat.originalName}</code> - 角色本名<br>
+                        • <code style="background:#e9ecef;padding:1px 4px;border-radius:3px;">${transcriptText}</code> - 要总结的内容<br>
+                        • <code style="background:#e9ecef;padding:1px 4px;border-radius:3px;">${getJailbreakSuffix()}</code> - 破限后缀
+                    </p>
+                </div>
+
+                <!-- 【新增】全局长期记忆设置 -->
+                <hr style="margin: 25px 0; border: none; border-top: 1px solid #e0e0e0;">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                        <div>
+                            <label style="font-weight: 600; display: block; color: #333; margin-bottom: 5px;">全局长期记忆</label>
+                            <p style="font-size: 12px; color: #666; margin: 0; line-height: 1.4;">
+                                开启后，此角色的长期记忆将会加入到所有其他角色的提示词中，但不影响其他角色自己的记忆。
+                            </p>
+                        </div>
+                        <label class="toggle-switch" style="flex-shrink: 0; margin-left: 15px;">
+                            <input type="checkbox" id="global-memory-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div style="background-color: #fff3cd; border-left: 3px solid #ffc107; padding: 10px; border-radius: 4px; margin-top: 10px;">
+                        <p style="font-size: 11px; color: #856404; margin: 0; line-height: 1.4;">
+                            <strong>⚠️ 注意：</strong>启用全局记忆后，所有角色在对话时都会参考此角色的长期记忆内容。这可能会增加API调用成本，并可能影响其他角色的行为表现。
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel" id="reset-summary-prompt-btn">重置为默认</button>
+                <button class="save" id="save-summary-prompt-btn">保存设置</button>
+            </div>
+        </div>
+    </div>
+    <!-- ▲▲▲ 总结提示词设置模态窗口结束 ▲▲▲ -->
+    
     <!-- ▼▼▼ 【全新】破限功能模态窗口 ▼▼▼ -->
     <div id="jailbreak-modal" class="modal">
         <div class="modal-content">
@@ -11165,6 +11238,38 @@
         </div>
     </div>
     <!-- ▲▲▲ 新HTML粘贴结束 ▲▲▲ -->
+    
+    <!-- ▼▼▼ 【全新】精炼预览模态窗口 ▼▼▼ -->
+    <div id="refine-preview-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>精炼预览</span>
+                <button class="close-btn" id="close-refine-preview-modal-btn" style="font-size: 16px; background: none; border: none; cursor: pointer; color: #666;">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="color: #666; margin-bottom: 15px; line-height: 1.4;">
+                    以下是AI精炼后的记忆内容预览，请确认是否要替换原有记忆：
+                </p>
+                <div style="background-color: #f5f5f5; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+                    <h4 style="margin: 0 0 10px 0; color: #333; font-size: 14px;">精炼后的记忆：</h4>
+                    <div id="refined-content-preview" style="white-space: pre-wrap; line-height: 1.6; color: #444; max-height: 300px; overflow-y: auto;">
+                        <!-- 精炼后的内容将显示在这里 -->
+                    </div>
+                </div>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #eee;">
+                    <p style="font-size: 12px; color: #999; margin: 0;">
+                        点击"确认替换"将会用精炼后的内容替换所有原始记忆，此操作不可撤销。
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="cancel" id="cancel-refine-preview-btn">取消</button>
+                <button class="save" id="confirm-refine-preview-btn">确认替换</button>
+            </div>
+        </div>
+    </div>
+    <!-- ▲▲▲ 精炼预览模态窗口结束 ▲▲▲ -->
+    
     <input type="file" id="ai-avatar-upload-input" accept="image/*" hidden>
     <input type="file" id="group-avatar-upload-input" accept="image/*" hidden>
     <script>
@@ -17899,7 +18004,7 @@ if (qzoneActionTaken) {
         }
         // ▲▲▲ 替换结束 ▲▲▲
         
-                function addLongPressListener(element, callback) { let pressTimer; const startPress = (e) => { if(isSelectionMode) return; e.preventDefault(); pressTimer = window.setTimeout(() => callback(e), 500); }; const cancelPress = () => clearTimeout(pressTimer); element.addEventListener('mousedown', startPress); element.addEventListener('mouseup', cancelPress); element.addEventListener('mouseleave', cancelPress); element.addEventListener('touchstart', startPress, { passive: true }); element.addEventListener('touchend', cancelPress); element.addEventListener('touchmove', cancelPress); }
+                function addLongPressListener(element, callback) { let pressTimer; const startPress = (e) => { if(isSelectionMode) return; if (e.type !== 'touchstart') { e.preventDefault(); } pressTimer = window.setTimeout(() => callback(e), 500); }; const cancelPress = () => clearTimeout(pressTimer); element.addEventListener('mousedown', startPress); element.addEventListener('mouseup', cancelPress); element.addEventListener('mouseleave', cancelPress); element.addEventListener('touchstart', startPress, { passive: true }); element.addEventListener('touchend', cancelPress); element.addEventListener('touchmove', cancelPress); }
         
                 async function handleListenTogetherClick() { const targetChatId = state.activeChatId; if (!targetChatId) return; if (!musicState.isActive) { startListenTogetherSession(targetChatId); return; } if (musicState.activeChatId === targetChatId) { document.getElementById('music-player-overlay').classList.add('visible'); } else { const oldChatName = state.chats[musicState.activeChatId]?.name || '未知'; const newChatName = state.chats[targetChatId]?.name || '当前'; const confirmed = await showCustomConfirm('切换听歌对象', `您正和「${oldChatName}」听歌。要结束并开始和「${newChatName}」的新会话吗？`, { confirmButtonClass: 'btn-danger' }); if (confirmed) { await endListenTogetherSession(true); await new Promise(resolve => setTimeout(resolve, 50)); startListenTogetherSession(targetChatId); } } }
 
@@ -23303,6 +23408,170 @@ async function handleDeleteMemory(authorChatId, memoryTimestamp) {
         }
         
         /**
+         * 【新增】总结提示词设置相关函数
+         */
+        // 默认总结提示词定义
+        // 【新增】构建包含全局记忆的长期记忆上下文的通用函数
+        function buildLongTermMemoryContext(currentChat, currentChatId) {
+            let longTermMemoryContext = '';
+            const currentMemories = [];
+            
+            // 添加当前角色的长期记忆
+            if (currentChat.longTermMemory && currentChat.longTermMemory.length > 0) {
+                currentMemories.push(...currentChat.longTermMemory.map(mem => `- ${mem.content}`));
+            }
+            
+            // 添加全局长期记忆（来自其他角色）
+            const globalMemories = [];
+            for (const [chatId, otherChat] of Object.entries(chats)) {
+                if (chatId !== currentChatId && 
+                    otherChat.globalMemoryEnabled && 
+                    otherChat.longTermMemory && 
+                    otherChat.longTermMemory.length > 0) {
+                    const otherChatName = otherChat.originalName || otherChat.name || '未知角色';
+                    globalMemories.push(`## 来自 ${otherChatName} 的全局记忆`);
+                    globalMemories.push(...otherChat.longTermMemory.map(mem => `- ${mem.content}`));
+                }
+            }
+            
+            // 构建完整的长期记忆上下文
+            if (currentMemories.length > 0 || globalMemories.length > 0) {
+                const memoryParts = [];
+                
+                if (currentMemories.length > 0) {
+                    memoryParts.push(`# 你的长期记忆 (已发生的事实)\n${currentMemories.join('\n')}`);
+                }
+                
+                if (globalMemories.length > 0) {
+                    memoryParts.push(`\n# 全局长期记忆 (其他角色的重要记忆)\n${globalMemories.join('\n')}`);
+                }
+                
+                longTermMemoryContext = memoryParts.join('\n');
+            }
+            
+            return longTermMemoryContext;
+        }
+
+        const DEFAULT_SUMMARY_PROMPTS = {
+            dialog: `# 你的任务
+请仔细阅读上述聊天记录，并遵循以下要求，生成一段新的故事摘要：
+
+新增大总结应当遵循以下原则：
+- 注明这是第几次大总结
+- 保留故事发展的关键信息和细节
+- 记录重要的角色关系变化
+- 使用客观、第三人称的叙述方式
+- 确保内容连贯性和逻辑性
+- 长度控制在合理范围内
+
+# 输出格式
+你的回复【必须且只能】是一个JSON对象，格式如下：
+\`{"summary": "在这里写下你总结好的摘要。"}\``,
+            
+            call: `# 你的任务
+你是一个对话摘要专家。你的唯一任务是阅读下面的【视频通话记录】，并将其浓缩成【一段】流畅、连贯、客观、并且【极其精简】的摘要。
+# 核心规则
+1.  **【长度铁律】**: 你的总结【必须】非常简短，总长度【绝对不能超过80个字】。
+2.  **客观事实**: 只记录通话中发生的最关键的事实、确认的约定或角色的核心情感变化。
+3.  **第三人称与命名**: 必须使用第三人称。请严格使用"\${userNickname}"（代表用户，不要用用户两个字称呼）和"\${chat.originalName}"（代表AI角色）来指代对话双方。
+4.  **输出格式**: 你的回复【必须且只能】是一个JSON对象，格式如下：
+    \`{"summary": "在这里写下你总结好的摘要。"}\`
+# 待总结的视频通话记录
+\${transcriptText}\${getJailbreakSuffix()}
+
+现在，请开始你的总结工作。`,
+            
+            refine: `# 你的任务
+你是一个记忆整合专家。请阅读下面的"记忆要点列表"，并将它们整合成一个更加精炼、连贯的核心记忆摘要。
+
+# 核心要求
+1.  **保留关键信息**: 请务必保留所有关键的人物、事件、设定和情感关系。
+2.  **消除冗余**: 请移除重复的、或已经不再重要的旧信息。
+3.  **客观视角**: 请使用客观的第三人称进行总结。并使用"\${userNickname}"（代表用户）和"\${targetChatForRefine.originalName}"（代表AI角色）来指代对话双方。
+4.  **长度要求**: 最终的摘要总长度应控制在 \${wordCount} 个字左右。
+5.  **格式要求**: 请确保你的回复是一个JSON对象，格式为：
+    \`{"summary": "在这里写下你整合并精炼后的核心记忆摘要。"}\`
+
+# 待整合的记忆要点列表
+\${memoryContent}\${getJailbreakSuffix()}
+
+现在，请开始你的整合精炼工作。`
+        };
+        
+        function openSummaryPromptModal() {
+            // 从localStorage加载自定义提示词，如果没有则使用默认值
+            const dialogPrompt = localStorage.getItem('customDialogSummaryPrompt') || DEFAULT_SUMMARY_PROMPTS.dialog;
+            const callPrompt = localStorage.getItem('customCallSummaryPrompt') || DEFAULT_SUMMARY_PROMPTS.call;
+            const refinePrompt = localStorage.getItem('customRefineSummaryPrompt') || DEFAULT_SUMMARY_PROMPTS.refine;
+            
+            // 设置模态窗口的值
+            document.getElementById('dialog-summary-prompt').value = dialogPrompt;
+            document.getElementById('call-summary-prompt').value = callPrompt;
+            document.getElementById('memory-refine-prompt').value = refinePrompt;
+            
+            // 加载全局记忆设置
+            const globalMemoryEnabled = state.activeChatId && state.chats[state.activeChatId] ? state.chats[state.activeChatId].globalMemoryEnabled || false : false;
+            document.getElementById('global-memory-toggle').checked = globalMemoryEnabled;
+            
+            // 显示模态窗口
+            document.getElementById('summary-prompt-modal').classList.add('visible');
+        }
+        
+        function closeSummaryPromptModal() {
+            document.getElementById('summary-prompt-modal').classList.remove('visible');
+        }
+        
+        function saveSummaryPromptSettings() {
+            const dialogPrompt = document.getElementById('dialog-summary-prompt').value.trim();
+            const callPrompt = document.getElementById('call-summary-prompt').value.trim();
+            const refinePrompt = document.getElementById('memory-refine-prompt').value.trim();
+            const globalMemoryEnabled = document.getElementById('global-memory-toggle').checked;
+            
+            // 保存到localStorage
+            localStorage.setItem('customDialogSummaryPrompt', dialogPrompt);
+            localStorage.setItem('customCallSummaryPrompt', callPrompt);
+            localStorage.setItem('customRefineSummaryPrompt', refinePrompt);
+            
+            // 保存全局记忆设置到当前聊天
+            if (currentChatId && chats[currentChatId]) {
+                chats[currentChatId].globalMemoryEnabled = globalMemoryEnabled;
+                saveChatsToStorage(); // 保存聊天数据
+            }
+            
+            closeSummaryPromptModal();
+            showCustomAlert('设置已保存', '总结提示词设置已成功保存！');
+        }
+        
+        function resetSummaryPromptSettings() {
+            if (confirm('确定要重置为默认提示词吗？此操作不可撤销。')) {
+                // 重置为默认值
+                document.getElementById('dialog-summary-prompt').value = DEFAULT_SUMMARY_PROMPTS.dialog;
+                document.getElementById('call-summary-prompt').value = DEFAULT_SUMMARY_PROMPTS.call;
+                document.getElementById('memory-refine-prompt').value = DEFAULT_SUMMARY_PROMPTS.refine;
+                
+                // 清除localStorage中的自定义设置
+                localStorage.removeItem('customDialogSummaryPrompt');
+                localStorage.removeItem('customCallSummaryPrompt');
+                localStorage.removeItem('customRefineSummaryPrompt');
+                
+                showCustomAlert('重置成功', '总结提示词已重置为默认设置！');
+            }
+        }
+        
+        // 获取当前使用的总结提示词的辅助函数
+        function getDialogSummaryPrompt() {
+            return localStorage.getItem('customDialogSummaryPrompt') || DEFAULT_SUMMARY_PROMPTS.dialog;
+        }
+        
+        function getCallSummaryPrompt() {
+            return localStorage.getItem('customCallSummaryPrompt') || DEFAULT_SUMMARY_PROMPTS.call;
+        }
+        
+        function getRefineSummaryPrompt() {
+            return localStorage.getItem('customRefineSummaryPrompt') || DEFAULT_SUMMARY_PROMPTS.refine;
+        }
+
+        /**
          * 【全新】破限功能相关函数
          */
         function openJailbreakModal() {
@@ -23381,19 +23650,15 @@ async function summarizeCallTranscript(chatId, transcriptText) {
 
     const userNickname = state.qzoneSettings.nickname || '用户';
 
-    const systemPrompt = `
-# 你的任务
-你是一个对话摘要专家。你的唯一任务是阅读下面的【视频通话记录】，并将其浓缩成【一段】流畅、连贯、客观、并且【极其精简】的摘要。
-# 核心规则
-1.  **【长度铁律】**: 你的总结【必须】非常简短，总长度【绝对不能超过80个字】。
-2.  **客观事实**: 只记录通话中发生的最关键的事实、确认的约定或角色的核心情感变化。
-3.  **第三人称与命名**: 必须使用第三人称。请严格使用“${userNickname}”（代表用户，不要用用户两个字称呼）和“${chat.originalName}”（代表AI角色）来指代对话双方。
-4.  **输出格式**: 你的回复【必须且只能】是一个JSON对象，格式如下：
-    \`{"summary": "在这里写下你总结好的摘要。"}\`
-# 待总结的视频通话记录
-${transcriptText}${getJailbreakSuffix()}
-
-现在，请开始你的总结工作。`;
+    // 使用自定义的通话总结提示词
+    let systemPrompt = getCallSummaryPrompt();
+    
+    // 替换提示词中的变量
+    systemPrompt = systemPrompt
+        .replace(/\$\{userNickname\}/g, userNickname)
+        .replace(/\$\{chat\.originalName\}/g, chat.originalName)
+        .replace(/\$\{transcriptText\}/g, transcriptText)
+        .replace(/\$\{getJailbreakSuffix\(\)\}/g, getJailbreakSuffix());
 
     // ▲▲▲ 核心修改从这里开始 ▲▲▲
     try {
@@ -23564,23 +23829,16 @@ function robustJsonParse(rawContent) {
             const memoryContent = targetChatForRefine.longTermMemory.map(mem => `- ${mem.content}`).join('\n');
             const userNickname = state.qzoneSettings.nickname || '用户';
         
-            const systemPrompt = `
-# 你的任务
-你是一个记忆整合专家。请阅读下面的“记忆要点列表”，并将它们整合成一个更加精炼、连贯的核心记忆摘要。
-
-# 核心要求
-1.  **保留关键信息**: 请务必保留所有关键的人物、事件、设定和情感关系。
-2.  **消除冗余**: 请移除重复的、或已经不再重要的旧信息。
-3.  **客观视角**: 请使用客观的第三人称进行总结。并使用“${userNickname}”（代表用户）和“${targetChatForRefine.originalName}”（代表AI角色）来指代对话双方。
-4.  **长度要求**: 最终的摘要总长度应控制在 ${wordCount} 个字左右。
-5.  **格式要求**: 请确保你的回复是一个JSON对象，格式为：
-    \`{"summary": "在这里写下你整合并精炼后的核心记忆摘要。"}\`
-
-# 待整合的记忆要点列表
-${memoryContent}
-
-请根据以上要求开始你的工作。
-`;
+            // 使用自定义的记忆精炼提示词
+            let systemPrompt = getRefineSummaryPrompt();
+            
+            // 替换提示词中的变量
+            systemPrompt = systemPrompt
+                .replace(/\$\{userNickname\}/g, userNickname)
+                .replace(/\$\{targetChatForRefine\.originalName\}/g, targetChatForRefine.originalName)
+                .replace(/\$\{wordCount\}/g, wordCount)
+                .replace(/\$\{memoryContent\}/g, memoryContent)
+                .replace(/\$\{getJailbreakSuffix\(\)\}/g, getJailbreakSuffix());
         
             await showCustomAlert("请稍候...", "正在请求AI进行记忆精炼...");
         
@@ -23615,29 +23873,30 @@ ${memoryContent}
         
                 const result = robustJsonParse(rawContent);
         
-                // ▼▼▼ 【【【核心修复就在这里！】】】 ▼▼▼
-                // 我们在这里增加了一个长度检查 (result.summary.trim().length > 10)
-                // 只有当AI返回的总结内容有效且长度超过10个字符时，才会执行覆盖操作。
+                // ▼▼▼ 【【【显示预览弹窗】】】 ▼▼▼
+                // 检查AI返回的总结内容是否有效
                 if (result && result.summary && result.summary.trim().length > 10) {
-                    const newMemoryEntry = {
-                        content: result.summary.trim(),
-                        timestamp: Date.now(),
-                        source: 'refined'
+                    // 将精炼结果保存到临时变量中，等待用户确认
+                    window.tempRefineData = {
+                        targetChat: targetChatForRefine,
+                        refinedContent: result.summary.trim(),
+                        originalMemoryCount: targetChatForRefine.longTermMemory.length
                     };
-        
-                    targetChatForRefine.longTermMemory = [newMemoryEntry];
-                    targetChatForRefine.lastMemorySummaryTimestamp = Date.now();
-                    await db.chats.put(targetChatForRefine);
                     
-                    if (document.getElementById('long-term-memory-screen').classList.contains('active')) {
-                        renderLongTermMemoryList();
+                    // 显示精炼内容到预览弹窗
+                    document.getElementById('refined-content-preview').textContent = result.summary.trim();
+                    document.getElementById('refine-preview-modal').classList.add('visible');
+                    
+                    // 关闭"请稍候"弹窗
+                    if (document.querySelector('.modal.visible') !== document.getElementById('refine-preview-modal')) {
+                        document.querySelector('.modal.visible')?.classList.remove('visible');
                     }
-                    await showCustomAlert('精炼成功', `已成功将“${targetChatForRefine.name}”的记忆精炼为 1 条核心记忆！`);
+                    
                 } else {
                     // 如果AI返回空内容或无意义的短内容，就会进入这里，抛出错误并提示用户，而不会覆盖旧记忆。
                     throw new Error(`AI返回了空的或无效的总结内容。您的原始记忆已被保留。\n\n原始返回: ${rawContent}`);
                 }
-                // ▲▲▲ 【【【修复结束】】】 ▲▲▲
+                // ▲▲▲ 【【【预览弹窗结束】】】 ▲▲▲
         
             } catch (error) {
                 console.error("精炼长期记忆时出错:", error);
@@ -23738,32 +23997,15 @@ ${chat.members.map(m => `- ${m.groupNickname} (本名: ${m.originalName})`).join
 现在，请为【每一个AI角色】生成他们各自的、第一人称的、精简的记忆。`;
 
     } else {
-        // --- 这是为【单聊】设计的、保持不变的"客观总结"指令 ---
-        systemPrompt = `
-# 你的任务
-请仔细阅读上述聊天记录，并遵循以下要求，生成一段新的故事摘要：
-
-新增大总结应当遵循以下原则：
-- 注明这是第几次大总结
-- **只需总结上次大总结到目前的新增部分剧情**
-- 按时间顺序或逻辑顺序组织信息，并包含具体的前后时间，可以分辨不同日期与时间发生的事情
-
-1.  **核心事件提炼:** 识别并描述这段对话中发生的关键事件、转折点或重要行动。
-2.  **情感与关系变化:** 捕捉并记录双方情绪上的主要变化、关系的进展（如变得更亲密、产生误会、关系紧张等）。
-3.  **关键信息与设定:** 记录任何新出现的、对未来故事重要的信息、设定、约定或秘密。
-4.  **叙事风格:** 必须使用第三人称、过去时进行叙述。文笔风格请参考细腻的女性向文学作品。
-5.  **保持客观:** 只总结聊天记录中明确发生或提到的事，不要进行过度的猜测或主观臆断。
-6.  **忽略不重要的内容:** 省略日常的问候（如"你好"、"在吗"）、无意义的闲聊和重复信息。
-
-# 核心规则
-- **第三人称与命名**: 必须使用第三人称视角。请严格使用"${userNickname}"（代表用户，不要用用户两个字称呼）和"${chat.originalName}"（代表AI角色）来指代对话双方。
-- **输出格式**: 你的回复【必须且只能】是一个JSON对象，格式如下：
-    \`{"summary": "在这里写下你总结好的摘要。"}\`
-    
-# 待总结的对话历史
-${formattedHistory}${getJailbreakSuffix()}
-
-现在，请开始你的总结工作。`;
+        // --- 使用自定义的对话总结提示词 ---
+        systemPrompt = getDialogSummaryPrompt();
+        
+        // 替换提示词中的变量
+        systemPrompt = systemPrompt
+            .replace(/\$\{userNickname\}/g, userNickname)
+            .replace(/\$\{chat\.originalName\}/g, chat.originalName)
+            .replace(/\$\{formattedHistory\}/g, formattedHistory)
+            .replace(/\$\{getJailbreakSuffix\(\)\}/g, getJailbreakSuffix());
     }
     // ▲▲▲ 修改结束 ▲▲▲
 
@@ -23847,22 +24089,15 @@ async function summarizeCallTranscript(chatId, transcriptText) {
 
     const userNickname = state.qzoneSettings.nickname || '用户';
 
-    // 使用与常规总结完全相同的、高度优化的指令
-    const systemPrompt = `
-# 你的任务
-你是一个对话摘要专家。你的唯一任务是阅读下面的【视频通话记录】，并将其浓缩成【一段】流畅、连贯、客观、并且【极其精简】的摘要。
-
-# 核心规则
-1.  **【长度铁律】**: 你的总结【必须】非常简短，总长度【绝对不能超过80个字】。
-2.  **客观事实**: 只记录通话中发生的最关键的事实、确认的约定或角色的核心情感变化。
-3.  **第三人称与命名**: 必须使用第三人称。请严格使用“${userNickname}”和“${chat.originalName}”来指代对话双方。
-4.  **输出格式**: 你的回复【必须且只能】是一个JSON对象，格式如下：
-    \`{"summary": "在这里写下你总结好的摘要。"}\`
-
-# 待总结的视频通话记录
-${transcriptText}
-
-现在，请开始你的总结工作。`;
+    // 使用自定义的通话总结提示词
+    let systemPrompt = getCallSummaryPrompt();
+    
+    // 替换提示词中的变量
+    systemPrompt = systemPrompt
+        .replace(/\$\{userNickname\}/g, userNickname)
+        .replace(/\$\{chat\.originalName\}/g, chat.originalName)
+        .replace(/\$\{transcriptText\}/g, transcriptText)
+        .replace(/\$\{getJailbreakSuffix\(\)\}/g, getJailbreakSuffix());
 
     try {
         const { proxyUrl, apiKey, model } = state.apiConfig.secondaryProxyUrl ? 
@@ -29165,8 +29400,8 @@ async function saveMemo(content) {
             // 【修复】定义一个更安全的用户显示名，避免传递"{{user}}"
             const userDisplayNameForAI = (state.qzoneSettings.nickname === '{{user}}' || !state.qzoneSettings.nickname) ? '用户' : state.qzoneSettings.nickname;
 
-            const longTermMemoryContext = chat.longTermMemory?.map(mem => `- ${mem.content}`).join('\n') || '无';
-            const recentHistoryWithUser = chat.history.slice(-5).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 30)}...`).join('\n');
+            const longTermMemoryContext = buildLongTermMemoryContext(chat, currentChatId) || '无';
+            const recentHistoryWithUser = chat.history.slice(-30).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 50)}...`).join('\n');
             const worldBookContext = (chat.settings.linkedWorldBookIds || [])
                 .map(bookId => state.worldBooks.find(wb => wb.id === bookId))
                 .filter(Boolean)
@@ -29265,8 +29500,8 @@ ${recentHistoryWithUser}
             // 【修复】定义一个更安全的用户显示名
             const userDisplayNameForAI = (state.qzoneSettings.nickname === '{{user}}' || !state.qzoneSettings.nickname) ? '用户' : state.qzoneSettings.nickname;
 
-            const longTermMemoryContext = chat.longTermMemory?.map(mem => `- ${mem.content}`).join('\n') || '无';
-            const recentHistoryWithUser = chat.history.slice(-5).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 30)}...`).join('\n');
+            const longTermMemoryContext = buildLongTermMemoryContext(chat, currentChatId) || '无';
+            const recentHistoryWithUser = chat.history.slice(-30).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 50)}...`).join('\n');
             const worldBookContext = (chat.settings.linkedWorldBookIds || []).map(bookId=>state.worldBooks.find(wb=>wb.id===bookId)).filter(Boolean).map(book=>`\n## 世界书《${book.name}》设定:\n${book.content.filter(e=>e.enabled).map(e=>`- ${e.content}`).join('\n')}`).join('');
             
             const systemPrompt = `
@@ -29510,9 +29745,8 @@ async function renderCharSimulatedQQ() {
                 }
             }
         
-            const longTermMemoryContext = chat.longTermMemory && chat.longTermMemory.length > 0
-                ? `# 你的长期记忆 (已发生的事实)\n${chat.longTermMemory.map(mem => `- ${mem.content}`).join('\n')}`
-                : '';
+            // 使用通用函数构建包含全局记忆的长期记忆上下文
+            const longTermMemoryContext = buildLongTermMemoryContext(chat, currentChatId);
             
             const recentHistoryWithUser = chat.history.slice(-10).map(msg => {
                 const sender = msg.role === 'user' ? userDisplayNameForAI : chat.name;
@@ -29729,8 +29963,8 @@ async function handleGenerateSimulatedAlbum() {
 
     const userDisplayNameForAI = (state.qzoneSettings.nickname === '{{user}}' || !state.qzoneSettings.nickname) ? '用户' : state.qzoneSettings.nickname;
     
-    const longTermMemoryContext = chat.longTermMemory?.map(mem => `- ${mem.content}`).join('\n') || '无';
-    const recentHistoryWithUser = chat.history.slice(-5).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 30)}...`).join('\n');
+    const longTermMemoryContext = buildLongTermMemoryContext(chat, currentChatId) || '无';
+    const recentHistoryWithUser = chat.history.slice(-30).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 50)}...`).join('\n');
     const worldBookContext = (chat.settings.linkedWorldBookIds || [])
         .map(bookId => state.worldBooks.find(wb => wb.id === bookId))
         .filter(Boolean)
@@ -29900,8 +30134,8 @@ ${recentHistoryWithUser}
             
             const userDisplayNameForAI = (state.qzoneSettings.nickname === '{{user}}' || !state.qzoneSettings.nickname) ? '用户' : state.qzoneSettings.nickname;
         
-            const longTermMemoryContext = chat.longTermMemory?.map(mem => `- ${mem.content}`).join('\n') || '无';
-            const recentHistoryWithUser = chat.history.slice(-5).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 30)}...`).join('\n');
+            const longTermMemoryContext = buildLongTermMemoryContext(chat, currentChatId) || '无';
+            const recentHistoryWithUser = chat.history.slice(-30).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 50)}...`).join('\n');
             const worldBookContext = (chat.settings.linkedWorldBookIds || [])
                 .map(bookId => state.worldBooks.find(wb => wb.id === bookId))
                 .filter(Boolean)
@@ -30083,8 +30317,8 @@ function openCharArticle(index) {
             // 【修复】定义一个更安全的用户显示名
             const userDisplayNameForAI = (state.qzoneSettings.nickname === '{{user}}' || !state.qzoneSettings.nickname) ? '用户' : state.qzoneSettings.nickname;
         
-            const longTermMemoryContext = chat.longTermMemory?.map(mem => `- ${mem.content}`).join('\n') || '无';
-            const recentHistoryWithUser = chat.history.slice(-5).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 30)}...`).join('\n');
+            const longTermMemoryContext = buildLongTermMemoryContext(chat, currentChatId) || '无';
+            const recentHistoryWithUser = chat.history.slice(-30).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 50)}...`).join('\n');
             const worldBookContext = (chat.settings.linkedWorldBookIds || [])
                 .map(bookId => state.worldBooks.find(wb => wb.id === bookId))
                 .filter(Boolean)
@@ -30246,8 +30480,8 @@ function renderCharWallet() {
             // 【修复】定义一个更安全的用户显示名
             const userDisplayNameForAI = (state.qzoneSettings.nickname === '{{user}}' || !state.qzoneSettings.nickname) ? '用户' : state.qzoneSettings.nickname;
         
-            const longTermMemoryContext = chat.longTermMemory?.map(mem => `- ${mem.content}`).join('\n') || '无';
-            const recentHistoryWithUser = chat.history.slice(-5).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 30)}...`).join('\n');
+            const longTermMemoryContext = buildLongTermMemoryContext(chat, currentChatId) || '无';
+            const recentHistoryWithUser = chat.history.slice(-30).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 50)}...`).join('\n');
             const worldBookContext = (chat.settings.linkedWorldBookIds || [])
                 .map(bookId => state.worldBooks.find(wb => wb.id === bookId))
                 .filter(Boolean)
@@ -30354,8 +30588,8 @@ async function handleGenerateAmapHistory() {
     const userDisplayNameForAI = (state.qzoneSettings.nickname === '{{user}}' || !state.qzoneSettings.nickname) ? '用户' : state.qzoneSettings.nickname;
 
     // (上下文构建逻辑保持不变)
-    const longTermMemoryContext = chat.longTermMemory?.map(mem => `- ${mem.content}`).join('\n') || '无';
-    const recentHistoryWithUser = chat.history.slice(-5).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 30)}...`).join('\n');
+    const longTermMemoryContext = buildLongTermMemoryContext(chat, currentChatId) || '无';
+    const recentHistoryWithUser = chat.history.slice(-30).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 50)}...`).join('\n');
     const worldBookContext = (chat.settings.linkedWorldBookIds || [])
         .map(bookId => state.worldBooks.find(wb => wb.id === bookId))
         .filter(Boolean)
@@ -30494,8 +30728,8 @@ function renderCharAmap() {
             
             const userDisplayNameForAI = (state.qzoneSettings.nickname === '{{user}}' || !state.qzoneSettings.nickname) ? '用户' : state.qzoneSettings.nickname;
 
-            const longTermMemoryContext = chat.longTermMemory?.map(mem => `- ${mem.content}`).join('\n') || '无';
-            const recentHistoryWithUser = chat.history.slice(-5).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 30)}...`).join('\n');
+            const longTermMemoryContext = buildLongTermMemoryContext(chat, currentChatId) || '无';
+            const recentHistoryWithUser = chat.history.slice(-30).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 50)}...`).join('\n');
             const worldBookContext = (chat.settings.linkedWorldBookIds || [])
                 .map(bookId => state.worldBooks.find(wb => wb.id === bookId))
                 .filter(Boolean)
@@ -30634,8 +30868,8 @@ ${recentHistoryWithUser}
             
             const userDisplayNameForAI = (state.qzoneSettings.nickname === '{{user}}' || !state.qzoneSettings.nickname) ? '用户' : state.qzoneSettings.nickname;
 
-            const longTermMemoryContext = chat.longTermMemory?.map(mem => `- ${mem.content}`).join('\n') || '无';
-            const recentHistoryWithUser = chat.history.slice(-5).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 30)}...`).join('\n');
+            const longTermMemoryContext = buildLongTermMemoryContext(chat, currentChatId) || '无';
+            const recentHistoryWithUser = chat.history.slice(-30).map(msg => `${msg.role === 'user' ? userDisplayNameForAI : chat.name}: ${String(msg.content).substring(0, 50)}...`).join('\n');
             const worldBookContext = (chat.settings.linkedWorldBookIds || [])
                 .map(bookId => state.worldBooks.find(wb => wb.id === bookId))
                 .filter(Boolean)
@@ -33872,11 +34106,62 @@ document.getElementById('chat-settings-screen').addEventListener('click', (e) =>
             }
         });
         // ▲▲▲ 新增代码结束 ▲▲▲
-        // 【全新】为长期记忆“精炼”按钮绑定事件
+        // 【全新】为长期记忆"精炼"按钮绑定事件
         document.getElementById('refine-memory-btn-header').addEventListener('click', () => {
             if(state.activeChatId) {
                 summarizeExistingLongTermMemory(state.activeChatId);
             }
+        });
+
+        // 【全新】精炼预览弹窗事件处理
+        // 确认替换按钮
+        document.getElementById('confirm-refine-preview-btn').addEventListener('click', async () => {
+            if (!window.tempRefineData) return;
+            
+            try {
+                const { targetChat, refinedContent, originalMemoryCount } = window.tempRefineData;
+                
+                // 创建新的记忆条目
+                const newMemoryEntry = {
+                    content: refinedContent,
+                    timestamp: Date.now(),
+                    source: 'refined'
+                };
+                
+                // 替换原有记忆
+                targetChat.longTermMemory = [newMemoryEntry];
+                targetChat.lastMemorySummaryTimestamp = Date.now();
+                await db.chats.put(targetChat);
+                
+                // 刷新显示
+                if (document.getElementById('long-term-memory-screen').classList.contains('active')) {
+                    renderLongTermMemoryList();
+                }
+                
+                // 关闭预览弹窗
+                document.getElementById('refine-preview-modal').classList.remove('visible');
+                
+                // 显示成功消息
+                await showCustomAlert('精炼成功', `已成功将"${targetChat.name}"的记忆精炼为 1 条核心记忆！`);
+                
+                // 清理临时数据
+                window.tempRefineData = null;
+                
+            } catch (error) {
+                console.error("确认精炼时出错:", error);
+                await showCustomAlert('精炼失败', `操作失败，您的记忆未被修改: ${error.message}`);
+            }
+        });
+
+        // 取消按钮和关闭按钮
+        document.getElementById('cancel-refine-preview-btn').addEventListener('click', () => {
+            document.getElementById('refine-preview-modal').classList.remove('visible');
+            window.tempRefineData = null; // 清理临时数据
+        });
+
+        document.getElementById('close-refine-preview-modal-btn').addEventListener('click', () => {
+            document.getElementById('refine-preview-modal').classList.remove('visible');
+            window.tempRefineData = null; // 清理临时数据
         });
                     // ▼▼▼ 【全新】API预设功能事件监听器 ▼▼▼
                     document.getElementById('api-preset-select').addEventListener('change', handlePresetSelectionChange);
@@ -35425,6 +35710,14 @@ if (placeholder) {
         
         // 长期记忆页面顶部"总结"按钮 -> 手动总结
         document.getElementById('summarize-recent-btn-header').addEventListener('click', handleManualSummary);
+        
+        // 长期记忆页面顶部"总结提示词设置"按钮 -> 打开总结提示词设置
+        document.getElementById('summary-prompt-settings-btn').addEventListener('click', openSummaryPromptModal);
+        
+        // 总结提示词模态窗口按钮事件监听器
+        document.getElementById('close-summary-prompt-modal-btn').addEventListener('click', closeSummaryPromptModal);
+        document.getElementById('reset-summary-prompt-btn').addEventListener('click', resetSummaryPromptSettings);
+        document.getElementById('save-summary-prompt-btn').addEventListener('click', saveSummaryPromptSettings);
         
         // 长期记忆页面顶部"破限"按钮 -> 打开破限设置
         document.getElementById('jailbreak-btn-header').addEventListener('click', openJailbreakModal);
