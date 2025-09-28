@@ -11289,6 +11289,8 @@
         let currentQzoneReplyContext = null;
         // ...
                 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
+            
+            
             // gemini如果是多个密钥, 那么随机获取一个
             function getRandomValue(str) {
                 // 检查字符串是否包含逗号
@@ -12400,6 +12402,7 @@ const DEFAULT_NOTIFICATION_SOUND = 'https://www.myinstants.com/media/sounds/noti
                         applyCustomFont(state.globalSettings.fontUrl || '', true);
                     }
                 }
+
                 window.updateListenTogetherIconProxy = () => {};
         
                 function switchToChatListView(viewId) {
@@ -23522,12 +23525,12 @@ async function handleDeleteMemory(authorChatId, memoryTimestamp) {
 6.  **忽略不重要的内容:** 省略日常的问候（如"你好"、"在吗"）、无意义的闲聊和重复信息。
 
 # 核心规则
-- **第三人称与命名**: 必须使用第三人称视角。请严格使用"${userNickname}"（代表用户，不要用用户两个字称呼）和"${chat.originalName}"（代表AI角色）来指代对话双方。
+- **第三人称与命名**: 必须使用第三人称视角。请严格使用"\$\{userNickname\}"（代表用户，不要用用户两个字称呼）和"\$\{chat.originalName\}"（代表AI角色）来指代对话双方。
 - **输出格式**: 你的回复【必须且只能】是一个JSON对象，格式如下：
     \`{"summary": "在这里写下你总结好的摘要。"}\`
     
 # 待总结的对话历史
-${formattedHistory}${getJailbreakSuffix()}
+\${formattedHistory}\${getJailbreakSuffix()}
 
 现在，请开始你的总结工作。`,
             
@@ -23536,7 +23539,7 @@ ${formattedHistory}${getJailbreakSuffix()}
 # 核心规则
 1.  **【长度铁律】**: 你的总结【必须】非常简短，总长度【绝对不能超过80个字】。
 2.  **客观事实**: 只记录通话中发生的最关键的事实、确认的约定或角色的核心情感变化。
-3.  **第三人称与命名**: 必须使用第三人称。请严格使用"\${userNickname}"（代表用户，不要用用户两个字称呼）和"\${chat.originalName}"（代表AI角色）来指代对话双方。
+3.  **第三人称与命名**: 必须使用第三人称。请严格使用"\$\{userNickname\}"（代表用户，不要用用户两个字称呼）和"\$\{chat.originalName\}"（代表AI角色）来指代对话双方。
 4.  **输出格式**: 你的回复【必须且只能】是一个JSON对象，格式如下：
     \`{"summary": "在这里写下你总结好的摘要。"}\`
 # 待总结的视频通话记录
@@ -23550,7 +23553,7 @@ ${formattedHistory}${getJailbreakSuffix()}
 # 核心要求
 1.  **保留关键信息**: 请务必保留所有关键的人物、事件、设定和情感关系。
 2.  **消除冗余**: 请移除重复的、或已经不再重要的旧信息。
-3.  **客观视角**: 请使用客观的第三人称进行总结。并使用"\${userNickname}"（代表用户）和"\${targetChatForRefine.originalName}"（代表AI角色）来指代对话双方。
+3.  **客观视角**: 请使用客观的第三人称进行总结。并使用"\$\{userNickname\}"（代表用户）和"\$\{targetChatForRefine.originalName\}"（代表AI角色）来指代对话双方。
 4.  **长度要求**: 最终的摘要总长度应控制在 \${wordCount} 个字左右。
 5.  **格式要求**: 请确保你的回复是一个JSON对象，格式为：
     \`{"summary": "在这里写下你整合并精炼后的核心记忆摘要。"}\`
@@ -23584,7 +23587,14 @@ ${formattedHistory}${getJailbreakSuffix()}
             document.getElementById('summary-prompt-modal').classList.remove('visible');
         }
         
-        function saveSummaryPromptSettings() {
+        // 保存聊天数据到存储
+        async function saveChatsToStorage() {
+            if (state.activeChatId && state.chats[state.activeChatId]) {
+                await db.chats.put(state.chats[state.activeChatId]);
+            }
+        }
+        
+        async function saveSummaryPromptSettings() {
             const dialogPrompt = document.getElementById('dialog-summary-prompt').value.trim();
             const callPrompt = document.getElementById('call-summary-prompt').value.trim();
             const refinePrompt = document.getElementById('memory-refine-prompt').value.trim();
@@ -23596,9 +23606,9 @@ ${formattedHistory}${getJailbreakSuffix()}
             localStorage.setItem('customRefineSummaryPrompt', refinePrompt);
             
             // 保存全局记忆设置到当前聊天
-            if (currentChatId && chats[currentChatId]) {
-                chats[currentChatId].globalMemoryEnabled = globalMemoryEnabled;
-                saveChatsToStorage(); // 保存聊天数据
+            if (state.activeChatId && state.chats[state.activeChatId]) {
+                state.chats[state.activeChatId].globalMemoryEnabled = globalMemoryEnabled;
+                await saveChatsToStorage(); // 保存聊天数据
             }
             
             closeSummaryPromptModal();
